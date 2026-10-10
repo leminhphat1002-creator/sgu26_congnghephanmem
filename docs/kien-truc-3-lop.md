@@ -84,3 +84,42 @@ Bảng `locations` (model `Location` ở `app/modules/poi/models.py`, migration 
 
 Ràng buộc `uq_location_source` trên (`source`, `source_lang`, `source_page_id`). SQLite coi `NULL`
 là khác nhau nên bản ghi nhập tay không bị chặn bởi ràng buộc này.
+
+## 7. Sơ đồ module và hướng phụ thuộc
+
+```mermaid
+flowchart LR
+    Client["Client mỏng<br/>(static/app)"] --> narration
+    subgraph Service["1 service FastAPI :8000"]
+        narration["narration<br/>(điều phối)"] --> poi
+        narration --> content
+        narration --> audio
+        poi --> content
+        core["core<br/>(config, db, exceptions)"]
+    end
+    content --> Wikimedia[("Wikimedia API")]
+    content --> SQLite[("SQLite")]
+    poi --> SQLite
+    audio --> EdgeTTS[("Edge TTS")]
+    audio --> MP3[("audio_files/ MP3")]
+```
+
+Mũi tên là hướng import/gọi. `content` và `audio` là lá của đồ thị phụ thuộc, nên không có vòng.
+Mọi module đều có thể dùng `core`.
+
+## 8. Vì sao modular monolith thay vì 3 service
+
+Với 2 người và 8 tuần, tách 3 service (kèm Gateway chỉ chuyển tiếp request) làm tăng chi phí
+mà không tăng giá trị:
+
+| Tiêu chí | 3 service + Gateway | Modular monolith (đang dùng) |
+| --- | --- | --- |
+| Giao tiếp | HTTP giữa service: thêm độ trễ, timeout, lỗi mạng | Gọi hàm trong cùng process |
+| Đóng gói và deploy | 3 Dockerfile, 3 pipeline, nhiều lần deploy | 1 Dockerfile, 1 pipeline, 1 lần deploy |
+| Cấu hình | Địa chỉ service, bảo mật nội bộ, health từng service | 1 bộ biến môi trường |
+| Test | Cần dựng nhiều service hoặc mock mạng | Mock Data Access, chạy trong 1 process |
+| Ranh giới module | Rõ vì tách process | Giữ rõ bằng 3 lớp, quy tắc phụ thuộc và `test_layers.py` |
+| Mở rộng sau này | Sẵn | Tách được thành microservice khi cần, vì module chỉ nói chuyện qua service và DTO |
+
+Đánh đổi: các module dùng chung một process và một SQLite, nên bộ đếm rate limit và khóa trong
+bộ nhớ chỉ đúng với một process.
