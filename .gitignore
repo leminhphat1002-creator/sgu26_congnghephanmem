@@ -1,0 +1,21 @@
+# Môi trường ảo và cache Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Dữ liệu chạy thật: không commit DB, MP3, secret
+*.db
+*.sqlite3
+data/
+audio_files/
+.env
+
+# IDE / hệ điều hành
+.idea/
+.vscode/
+.DS_Store
