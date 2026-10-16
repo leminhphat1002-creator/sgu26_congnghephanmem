@@ -4,9 +4,6 @@ Nhiệm vụ: Haversine, find_nearby, choose_activation (radius kích hoạt m�
 discover (hỏi SQLite trước, thiếu thì nhờ module content), validate tọa độ.
 Không biết FastAPI Request/Response. (Viết ở Tuần 2-3.)
 """
-
-"""Business logic for POI and GPS distance."""
-
 from math import asin, cos, radians, sin, sqrt
 
 from sqlalchemy.orm import Session
