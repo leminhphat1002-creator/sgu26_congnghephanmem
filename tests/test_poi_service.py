@@ -1,8 +1,14 @@
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.pool import StaticPool
 
+from app.core.db import Base
+from app.modules.poi import repository
 from app.modules.poi.service import (
     DEFAULT_RADIUS_METERS,
     choose_activation,
+    find_nearby,
     haversine,
 )
 
@@ -46,15 +52,6 @@ def test_activation_outside_radius():
 def test_activation_rejects_negative_distance():
     with pytest.raises(ValueError):
         choose_activation(-1.0)
-
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
-
-from app.core.db import Base
-from app.modules.poi import repository
-from app.modules.poi.service import find_nearby
 
 
 @pytest.fixture

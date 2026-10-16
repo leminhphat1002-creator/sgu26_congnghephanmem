@@ -4,8 +4,6 @@ Nơi duy nhất của poi chạm SQLite: CRUD Location và truy vấn ứng viê
 Model ORM nằm ở models.py cùng thư mục. (Viết ở Tuần 2.)
 """
 
-"""Data access layer for POI locations."""
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
