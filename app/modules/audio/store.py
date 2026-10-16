@@ -1,4 +1,3 @@
-
 """Quản lý cache MP3 bằng khóa SHA256 và ghi file an toàn."""
 
 from __future__ import annotations
@@ -8,7 +7,6 @@ import os
 import re
 import tempfile
 from pathlib import Path
-
 
 _KEY_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
