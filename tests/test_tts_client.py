@@ -1,10 +1,6 @@
-
 import pytest
 
-from app.modules.audio.tts_client import (
-    VOICE_BY_LANGUAGE,
-    synthesize_mp3,
-)
+from app.modules.audio.tts_client import VOICE_BY_LANGUAGE, synthesize_mp3
 
 
 @pytest.mark.parametrize("language", ["vi", "en", "ja"])
