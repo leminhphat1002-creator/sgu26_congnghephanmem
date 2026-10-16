@@ -1,5 +1,14 @@
 import pytest
 
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.pool import StaticPool
+
+from app.core.db import Base
+from app.modules.poi import repository
+from app.modules.poi.service import find_nearby
+
 from app.modules.poi.service import (
     DEFAULT_RADIUS_METERS,
     choose_activation,
