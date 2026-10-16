@@ -1,4 +1,3 @@
-
 import pytest
 
 from app.modules.poi.service import (
@@ -48,13 +47,13 @@ def test_activation_rejects_negative_distance():
     with pytest.raises(ValueError):
         choose_activation(-1.0)
 
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from app.core.db import Base
 from app.modules.poi import repository
-from app.modules.poi.models import Location
 from app.modules.poi.service import find_nearby
 
 
@@ -126,11 +125,14 @@ def test_delete_location(db_session):
 
 
 def test_update_missing_location_returns_none(db_session):
-    assert repository.update_location(
-        db_session,
-        999,
-        name="Không tồn tại",
-    ) is None
+    assert (
+        repository.update_location(
+            db_session,
+            999,
+            name="Không tồn tại",
+        )
+        is None
+    )
 
 
 def test_find_nearby_filters_by_distance(db_session):
