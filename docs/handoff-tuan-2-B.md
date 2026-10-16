@@ -16,7 +16,6 @@
 | Test riêng module Audio | Đã chạy theo báo cáo khi thực hiện |
 | `python scripts/smoke_audio.py` | Đã chạy theo báo cáo khi thực hiện |
 | `git push origin main` | Đã thực hiện; cần đối chiếu GitHub nếu cần xác nhận commit hiện có trên remote |
-
 *Lưu ý: Các kết quả trên được ghi lại theo tiến độ đã trao đổi; chưa có log đầu ra đầy đủ trong tài liệu này để xác minh độc lập.*
 
 ## Lưu ý

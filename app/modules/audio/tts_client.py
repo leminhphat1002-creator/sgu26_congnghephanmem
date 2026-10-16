@@ -1,10 +1,8 @@
-
 """Client chuyển văn bản thành giọng nói bằng Edge TTS."""
 
 from __future__ import annotations
 
 import asyncio
-
 
 VOICE_BY_LANGUAGE = {
     "vi": "vi-VN-HoaiMyNeural",
@@ -49,9 +47,7 @@ async def synthesize_mp3(
         audio = b"".join(chunks)
 
         if not audio:
-            raise RuntimeError(
-                "Edge TTS không trả về dữ liệu âm thanh"
-            )
+            raise RuntimeError("Edge TTS không trả về dữ liệu âm thanh")
 
         return audio
 
@@ -60,7 +56,5 @@ async def synthesize_mp3(
             generate(),
             timeout=timeout,
         )
-    except asyncio.TimeoutError as exc:
-        raise TimeoutError(
-            f"Edge TTS vượt quá thời gian chờ {timeout} giây"
-        ) from exc
+    except TimeoutError as exc:
+        raise TimeoutError(f"Edge TTS vượt quá thời gian chờ {timeout} giây") from exc
