@@ -17,6 +17,7 @@ async def synthesize_mp3(
     timeout: float = 30.0,
 ) -> bytes:
     """Tạo MP3 bất đồng bộ, có timeout và kiểm tra ngôn ngữ."""
+
     if not text or not text.strip():
         raise ValueError("Văn bản không được để trống")
 
@@ -51,7 +52,10 @@ async def synthesize_mp3(
         return audio
 
     try:
-        return await asyncio.wait_for(generate(), timeout=timeout)
+        return await asyncio.wait_for(
+            generate(),
+            timeout=timeout,
+        )
     except TimeoutError as exc:
         raise TimeoutError(
             f"Edge TTS vượt quá thời gian chờ {timeout} giây"
