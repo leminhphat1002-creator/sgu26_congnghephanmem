@@ -34,17 +34,12 @@ def haversine(
         if not -180 <= longitude <= 180:
             raise ValueError("Longitude must be between -180 and 180")
 
-    lat1, lon1, lat2, lon2 = map(
-        radians, (latitude1, longitude1, latitude2, longitude2)
-    )
+    lat1, lon1, lat2, lon2 = map(radians, (latitude1, longitude1, latitude2, longitude2))
 
     delta_lat = lat2 - lat1
     delta_lon = lon2 - lon1
 
-    a = (
-        sin(delta_lat / 2) ** 2
-        + cos(lat1) * cos(lat2) * sin(delta_lon / 2) ** 2
-    )
+    a = sin(delta_lat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(delta_lon / 2) ** 2
     a = min(1.0, max(0.0, a))
 
     return 2 * EARTH_RADIUS_METERS * asin(sqrt(a))
