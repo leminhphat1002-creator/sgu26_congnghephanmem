@@ -14,6 +14,7 @@ from app.core.config import get_settings
 from app.core.exceptions import AppError
 
 WIKIMEDIA_API = "https://{lang}.wikipedia.org/w/api.php"
+SUPPORTED_LANGUAGES = {"vi", "en", "ja"}
 
 
 class WikimediaClient:
@@ -21,7 +22,7 @@ class WikimediaClient:
 
     def __init__(self, timeout: float | None = None) -> None:
         settings = get_settings()
-        self.timeout = timeout or settings.wikimedia_timeout_s
+        self.timeout = timeout if timeout is not None else settings.wikimedia_timeout_s
         self.user_agent = settings.wikimedia_user_agent
 
     async def _request(
@@ -29,7 +30,8 @@ class WikimediaClient:
         lang: str,
         params: dict[str, Any],
     ) -> dict[str, Any]:
-        if lang not in {"vi", "en", "ja"}:
+        """Gửi request và chuyển lỗi Wikimedia thành AppError."""
+        if lang not in SUPPORTED_LANGUAGES:
             raise ValueError("Ngôn ngữ Wikimedia chưa được hỗ trợ")
 
         headers = {"User-Agent": self.user_agent}
@@ -48,46 +50,49 @@ class WikimediaClient:
                         **params,
                     },
                 )
+
+                # Kiểm tra trực tiếp để tương thích với response mock trong test.
+                if response.status_code == 429:
+                    raise AppError(
+                        "rate_limited",
+                        "Wikimedia giới hạn số lượng yêu cầu",
+                        503,
+                    )
+
+                response.raise_for_status()
+                data = response.json()
+
+        except AppError:
+            raise
         except httpx.TimeoutException as exc:
             raise AppError(
                 "timeout",
                 "Wikimedia phản hồi quá thời gian cho phép",
                 504,
             ) from exc
-        except httpx.HTTPError as exc:
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 429:
+                raise AppError(
+                    "rate_limited",
+                    "Wikimedia giới hạn số lượng yêu cầu",
+                    503,
+                ) from exc
+
+            raise AppError(
+                "upstream_error",
+                f"Wikimedia trả về HTTP {exc.response.status_code}",
+                502,
+            ) from exc
+        except httpx.RequestError as exc:
             raise AppError(
                 "upstream_error",
                 "Không thể kết nối Wikimedia",
                 502,
             ) from exc
-
-        if response.status_code == 429:
-            raise AppError(
-                "rate_limited",
-                "Wikimedia đang giới hạn số lượng yêu cầu",
-                503,
-            )
-
-        if response.status_code >= 500:
-            raise AppError(
-                "upstream_error",
-                "Wikimedia đang gặp lỗi",
-                502,
-            )
-
-        if response.status_code >= 400:
-            raise AppError(
-                "upstream_error",
-                "Wikimedia từ chối yêu cầu",
-                502,
-            )
-
-        try:
-            data = response.json()
         except ValueError as exc:
             raise AppError(
                 "upstream_error",
-                "Wikimedia trả về dữ liệu JSON không hợp lệ",
+                "Dữ liệu Wikimedia không phải JSON hợp lệ",
                 502,
             ) from exc
 
@@ -99,6 +104,18 @@ class WikimediaClient:
             )
 
         if "error" in data:
+            error = data["error"]
+
+            if isinstance(error, dict) and error.get("code") in {
+                "ratelimited",
+                "maxlag",
+            }:
+                raise AppError(
+                    "rate_limited",
+                    "Wikimedia giới hạn số lượng yêu cầu",
+                    429,
+                )
+
             raise AppError(
                 "upstream_error",
                 "Wikimedia trả về lỗi API",
@@ -118,10 +135,13 @@ class WikimediaClient:
         """Tìm các trang Wikipedia gần tọa độ GPS."""
         if not -90 <= latitude <= 90:
             raise ValueError("Latitude phải nằm trong khoảng -90 đến 90")
+
         if not -180 <= longitude <= 180:
             raise ValueError("Longitude phải nằm trong khoảng -180 đến 180")
+
         if not 1 <= radius <= 10000:
             raise ValueError("Radius phải nằm trong khoảng 1 đến 10000")
+
         if not 1 <= limit <= 50:
             raise ValueError("Limit phải nằm trong khoảng 1 đến 50")
 
@@ -140,6 +160,7 @@ class WikimediaClient:
 
         query = data.get("query", {})
         results = query.get("geosearch", []) if isinstance(query, dict) else []
+
         return results if isinstance(results, list) else []
 
     async def get_extract(
@@ -171,6 +192,7 @@ class WikimediaClient:
             return None
 
         page = pages[0]
+
         if not isinstance(page, dict) or page.get("missing"):
             return None
 
@@ -190,9 +212,11 @@ class WikimediaClient:
         """Tìm tiêu đề trang tương ứng trong ngôn ngữ đích."""
         if page_id < 1:
             raise ValueError("page_id phải lớn hơn 0")
-        if source_lang not in {"vi", "en", "ja"}:
+
+        if source_lang not in SUPPORTED_LANGUAGES:
             raise ValueError("Ngôn ngữ nguồn chưa được hỗ trợ")
-        if target_lang not in {"vi", "en", "ja"}:
+
+        if target_lang not in SUPPORTED_LANGUAGES:
             raise ValueError("Ngôn ngữ đích chưa được hỗ trợ")
 
         data = await self._request(
@@ -213,12 +237,15 @@ class WikimediaClient:
             return None
 
         page = pages[0]
+
         if not isinstance(page, dict):
             return None
 
         links = page.get("langlinks", [])
+
         if not isinstance(links, list) or not links:
             return None
 
         link = links[0]
+
         return link.get("title") if isinstance(link, dict) else None

@@ -35,7 +35,7 @@ class Settings:
             audio_dir=os.environ.get("AUDIO_DIR", "./audio_files"),
             wikimedia_user_agent=os.environ.get(
                 "WIKIMEDIA_USER_AGENT",
-                "sgu26-thuyet-minh/0.1 (THAY-BANG-THONG-TIN-LIEN-HE-CUA-NHOM)",
+                "sgu26-congnghephanmem/0.1",
             ),
             wikimedia_timeout_s=_read_float("WIKIMEDIA_TIMEOUT_S", 8.0),
             tts_timeout_s=_read_float("TTS_TIMEOUT_S", 15.0),
