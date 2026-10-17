@@ -11,6 +11,7 @@ from alembic import context
 
 from app.core.config import Settings
 from app.core.db import Base, create_db_engine
+from app.modules.content import models as _content_models  # noqa: F401
 
 # Import model để Base.metadata biết các bảng (autogenerate và kiểm tra schema).
 from app.modules.poi import models as _poi_models  # noqa: F401
