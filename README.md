@@ -51,13 +51,9 @@ app/
   static/app/              # client mỏng (Tuần 5)
 migrations/                # Alembic
 tests/
-docs/                      # kiến trúc, Git workflow, handoff từng tuần
 scripts/
 .github/                   # PR template, workflow CI
 ```
-
-Chi tiết 3 lớp và quy tắc phụ thuộc: [docs/kien-truc-3-lop.md](docs/kien-truc-3-lop.md).
-Quy trình Git: [docs/git-workflow.md](docs/git-workflow.md).
 
 ## Quy tắc dữ liệu
 
