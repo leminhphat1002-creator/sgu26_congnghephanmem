@@ -18,7 +18,7 @@ class LocationCreate(BaseModel):
     source: str = "manual"
     source_lang: str | None = None
     source_title: str | None = None
-    source_page_id: str | None = None
+    source_page_id: int | None = None
     source_url: str | None = None
     is_ready: bool = False
 
@@ -58,7 +58,7 @@ class LocationUpdate(BaseModel):
     source: str | None = None
     source_lang: str | None = None
     source_title: str | None = None
-    source_page_id: str | None = None
+    source_page_id: int | None = None
     source_url: str | None = None
     is_ready: bool | None = None
 

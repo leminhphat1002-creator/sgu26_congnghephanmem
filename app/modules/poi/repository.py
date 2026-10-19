@@ -100,3 +100,17 @@ def find_in_bounding_box(
         .order_by(Location.id)
     )
     return list(session.scalars(statement).all())
+
+
+def get_location_by_source_page(
+    session: Session,
+    source_lang: str,
+    source_page_id: int,
+) -> Location | None:
+    """Find a Wikimedia location by source language and page ID."""
+    statement = select(Location).where(
+        Location.source == "wikimedia",
+        Location.source_lang == source_lang,
+        Location.source_page_id == source_page_id,
+    )
+    return session.scalars(statement).first()
