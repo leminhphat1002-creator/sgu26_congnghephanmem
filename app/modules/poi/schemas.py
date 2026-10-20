@@ -100,6 +100,6 @@ class LocationRead(BaseModel):
     source: str
     source_lang: str | None
     source_title: str | None
-    source_page_id: str | None
+    source_page_id: int | None
     source_url: str | None
     is_ready: bool
