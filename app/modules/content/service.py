@@ -1,8 +1,7 @@
-"""Lớp 2 (Business) của content.
+"""Lớp Business của Content.
 
-Nhiệm vụ: làm sạch văn bản Wikimedia, rút gọn 450-900 ký tự ở ranh giới câu, chuỗi fallback
-ngôn ngữ đích -> en -> ngôn ngữ nguồn (không dịch máy), TTL và invalidation cache nội dung.
-content không import module nào khác. (Viết ở Tuần 3.)
+Lấy nội dung Wikimedia, xử lý langlinks, fallback ngôn ngữ,
+chuẩn hóa văn bản và quản lý cache SQLite.
 """
 
 from __future__ import annotations
@@ -16,7 +15,7 @@ from app.modules.content.wikimedia_client import WikimediaClient
 
 
 class ContentService:
-    """Làm sạch nội dung Wikimedia và chọn nội dung theo ngôn ngữ."""
+    """Lấy và xử lý nội dung Wikimedia đa ngôn ngữ."""
 
     SUPPORTED_LANGUAGES = ("vi", "en", "ja")
     MAX_EXTRACT_LENGTH = 900
@@ -33,17 +32,18 @@ class ContentService:
 
     @staticmethod
     def clean_text(text: str | None) -> str:
-        """Chuẩn hóa khoảng trắng và loại bỏ thẻ HTML."""
+        """Chuẩn hóa khoảng trắng và loại bỏ HTML."""
         if not text:
             return ""
 
         text = re.sub(r"<[^>]+>", " ", text)
         text = re.sub(r"\s+", " ", text)
+
         return text.strip()
 
     @classmethod
     def shorten_text(cls, text: str | None) -> str:
-        """Rút gọn nội dung, ưu tiên cắt tại ranh giới câu."""
+        """Rút gọn văn bản tại ranh giới câu."""
         cleaned = cls.clean_text(text)
 
         if len(cleaned) <= cls.MAX_EXTRACT_LENGTH:
@@ -54,6 +54,7 @@ class ContentService:
 
         if sentence_ends:
             end = sentence_ends[-1].end()
+
             if end >= cls.MIN_EXTRACT_LENGTH:
                 return candidate[:end].strip()
 
@@ -64,69 +65,195 @@ class ContentService:
 
     @staticmethod
     def normalize_cache_title(title: str) -> str:
-        """Chuẩn hóa khóa cache, không phân biệt hoa/thường."""
-        normalized = unicodedata.normalize("NFC", title.strip())
+        """Chuẩn hóa khóa cache không phân biệt hoa/thường."""
+        normalized = unicodedata.normalize(
+            "NFC",
+            title.strip(),
+        )
         return normalized.casefold()
+
+    def _read_cache(
+        self,
+        cache_title: str,
+        language: str,
+        requested_language: str,
+    ) -> dict[str, Any] | None:
+        """Đọc cache theo tên địa điểm gốc và ngôn ngữ."""
+        if self.repository is None:
+            return None
+
+        cached = self.repository.get(cache_title, language)
+
+        if cached is None:
+            return None
+
+        return {
+            "title": cached.page_title,
+            "extract": cached.extract,
+            "url": cached.source_url,
+            "language": cached.language,
+            "requested_language": requested_language,
+            "fallback_used": language != requested_language,
+        }
+
+    def _prepare_content(
+        self,
+        page: dict[str, Any] | None,
+        cache_title: str,
+        language: str,
+        requested_language: str,
+    ) -> dict[str, Any] | None:
+        """Làm sạch và lưu nội dung tìm được."""
+        if page is None:
+            return None
+
+        extract = self.shorten_text(page.get("extract"))
+
+        if not extract:
+            return None
+
+        if self.repository is not None:
+            self.repository.save(
+                page_title=cache_title,
+                language=language,
+                extract=extract,
+                source_url=page.get("url"),
+                ttl_seconds=self.CACHE_TTL_SECONDS,
+            )
+
+        return {
+            **page,
+            "extract": extract,
+            "language": language,
+            "requested_language": requested_language,
+            "fallback_used": language != requested_language,
+        }
 
     async def get_content(
         self,
         title: str,
         lang: str = "vi",
     ) -> dict[str, Any] | None:
-        """Lấy nội dung theo ngôn ngữ yêu cầu, có cache và fallback."""
+        """Tìm nội dung theo ngôn ngữ, sử dụng langlinks và fallback."""
         if not isinstance(title, str) or not title.strip():
             raise ValueError("Tên địa điểm không được để trống")
-
-        title = title.strip()
-        cache_title = self.normalize_cache_title(title)
 
         if lang not in self.SUPPORTED_LANGUAGES:
             raise ValueError(f"Ngôn ngữ chưa được hỗ trợ: {lang}")
 
-        fallback_order = [lang]
+        title = title.strip()
+        cache_title = self.normalize_cache_title(title)
+
+        # 1. Ưu tiên cache đúng ngôn ngữ được yêu cầu.
+        cached = self._read_cache(
+            cache_title,
+            lang,
+            lang,
+        )
+
+        if cached is not None:
+            return cached
+
+        # 2. Thử tiêu đề đầu vào trên Wikipedia ngôn ngữ đích.
+        target_page = await self.client.get_extract(title, lang)
+
+        result = self._prepare_content(
+            target_page,
+            cache_title,
+            lang,
+            lang,
+        )
+
+        if result is not None:
+            return result
+
+        # 3. Lấy trang gốc tiếng Việt để tìm liên kết ngôn ngữ.
+        source_page = None
+
+        if lang != "vi":
+            source_page = await self.client.get_extract(
+                title,
+                "vi",
+            )
+        else:
+            source_page = target_page
+
+        page_id = None
+
+        if source_page is not None:
+            page_id = source_page.get("page_id")
+
+        # 4. Tra tiêu đề tương ứng trong ngôn ngữ được chọn.
+        if lang != "vi" and isinstance(page_id, int) and page_id > 0:
+            translated_title = await self.client.get_langlinks(
+                page_id=page_id,
+                source_lang="vi",
+                target_lang=lang,
+            )
+
+            if translated_title:
+                translated_page = await self.client.get_extract(
+                    translated_title,
+                    lang,
+                )
+
+                result = self._prepare_content(
+                    translated_page,
+                    cache_title,
+                    lang,
+                    lang,
+                )
+
+                if result is not None:
+                    return result
+
+        # 5. Nếu vẫn không có, thử tiếng Anh rồi tiếng Việt.
+        fallback_order = []
+
         for fallback_lang in ("en", "vi"):
-            if fallback_lang not in fallback_order:
+            if fallback_lang != lang:
                 fallback_order.append(fallback_lang)
 
         for current_lang in fallback_order:
-            if self.repository is not None:
-                cached = self.repository.get(cache_title, current_lang)
+            cached = self._read_cache(
+                cache_title,
+                current_lang,
+                lang,
+            )
 
-                if cached is not None:
-                    return {
-                        "title": cached.page_title,
-                        "extract": cached.extract,
-                        "url": cached.source_url,
-                        "language": cached.language,
-                        "requested_language": lang,
-                        "fallback_used": current_lang != lang,
-                    }
+            if cached is not None:
+                return cached
 
-            page = await self.client.get_extract(title, current_lang)
+            if current_lang == "vi" and source_page is not None:
+                page = source_page
+            else:
+                # Với tiếng Anh, ưu tiên tiêu đề từ langlinks.
+                lookup_title = title
 
-            if page is None:
-                continue
+                if current_lang == "en" and isinstance(page_id, int) and page_id > 0:
+                    english_title = await self.client.get_langlinks(
+                        page_id=page_id,
+                        source_lang="vi",
+                        target_lang="en",
+                    )
 
-            extract = self.shorten_text(page.get("extract"))
-            if not extract:
-                continue
+                    if english_title:
+                        lookup_title = english_title
 
-            if self.repository is not None:
-                self.repository.save(
-                    page_title=cache_title,
-                    language=current_lang,
-                    extract=extract,
-                    source_url=page.get("url"),
-                    ttl_seconds=self.CACHE_TTL_SECONDS,
+                page = await self.client.get_extract(
+                    lookup_title,
+                    current_lang,
                 )
 
-            return {
-                **page,
-                "extract": extract,
-                "language": current_lang,
-                "requested_language": lang,
-                "fallback_used": current_lang != lang,
-            }
+            result = self._prepare_content(
+                page,
+                cache_title,
+                current_lang,
+                lang,
+            )
+
+            if result is not None:
+                return result
 
         return None
 
@@ -135,7 +262,7 @@ class ContentService:
         title: str,
         lang: str,
     ) -> dict[str, Any] | None:
-        """Đọc cache hiện có mà không gọi Wikimedia."""
+        """Đọc cache hiện có, không gọi Wikimedia."""
         if lang not in self.SUPPORTED_LANGUAGES:
             raise ValueError(f"Ngôn ngữ chưa được hỗ trợ: {lang}")
 
@@ -182,7 +309,7 @@ class ContentService:
         limit: int = 10,
         lang: str = "vi",
     ) -> list[dict[str, Any]]:
-        """Tìm các trang Wikipedia gần vị trí hiện tại."""
+        """Tìm các trang Wikipedia gần GPS."""
         return await self.client.geosearch(
             latitude=latitude,
             longitude=longitude,
@@ -197,7 +324,7 @@ class ContentService:
         source_lang: str = "vi",
         target_lang: str = "en",
     ) -> str | None:
-        """Lấy tiêu đề trang tương ứng ở ngôn ngữ đích."""
+        """Lấy tiêu đề tương ứng ở ngôn ngữ đích."""
         return await self.client.get_langlinks(
             page_id=page_id,
             source_lang=source_lang,
