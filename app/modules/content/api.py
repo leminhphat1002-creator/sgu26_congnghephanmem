@@ -1,4 +1,3 @@
-
 """Lớp 1 (Presentation) của module content."""
 
 from __future__ import annotations

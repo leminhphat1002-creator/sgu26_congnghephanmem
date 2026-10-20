@@ -1,4 +1,3 @@
-
 """Lớp 1 (Presentation) của module audio.
 
 POST /audio/tts: tạo giọng nói MP3.

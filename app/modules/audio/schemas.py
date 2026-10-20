@@ -1,4 +1,3 @@
-
 """Schema yêu cầu và kết quả của Audio API."""
 
 from pydantic import BaseModel, Field

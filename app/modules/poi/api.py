@@ -1,4 +1,3 @@
-
 """REST API cho module POI."""
 
 from typing import Annotated
