@@ -342,3 +342,226 @@ class NarrationService:
         result["cache_hit"] = audio["cache_hit"]
 
         return result
+
+    async def narrate_location(
+        self,
+        location_id: int,
+        language: str = "vi",
+    ) -> dict[str, Any]:
+        """Thuyết minh địa điểm người dùng chọn theo ID, không cần kích hoạt GPS."""
+        if language not in ContentService.SUPPORTED_LANGUAGES:
+            raise ValueError("Ngôn ngữ không được hỗ trợ")
+
+        location = poi_repository.get_location(self.session, location_id)
+        if location is None:
+            raise ValueError("Không tìm thấy địa điểm")
+        if not location.is_ready:
+            raise ValueError("Địa điểm chưa sẵn sàng thuyết minh")
+
+        title = location.source_title or location.name
+        result = {
+            "location_id": location.id,
+            "location_name": location.name,
+            "distance_meters": None,
+            "requested_language": language,
+        }
+
+        try:
+            content = await asyncio.wait_for(
+                self.content_service.get_content(title=title, lang=language),
+                timeout=self.CONTENT_TIMEOUT_SECONDS,
+            )
+        except (TimeoutError, AppError) as exc:
+            logger.warning("Không thể lấy nội dung POI %s: %s", location_id, exc)
+            content = None
+
+        if content is None:
+            return {
+                **result,
+                "status": "no_content",
+                "message": "Không có nội dung thuyết minh.",
+            }
+
+        text = content["extract"]
+        content_language = content["language"]
+        result.update(
+            status="success",
+            content_language=content_language,
+            fallback_used=content.get("fallback_used", False),
+            text=text,
+            audio_url=None,
+            cache_hit=None,
+            message="Đã tạo nội dung thuyết minh.",
+        )
+
+        try:
+            audio = await asyncio.wait_for(
+                self.audio_service.synthesize(text=text, lang=content_language),
+                timeout=self.AUDIO_TIMEOUT_SECONDS,
+            )
+        except (TimeoutError, AppError) as exc:
+            logger.warning("Không thể tạo MP3 cho POI %s: %s", location_id, exc)
+            result["status"] = "text_only"
+            result["message"] = "Có văn bản nhưng chưa tạo được MP3."
+            return result
+
+        result["audio_url"] = f"/audio/{audio['audio_filename']}"
+        result["cache_hit"] = audio["cache_hit"]
+        return result
+
+    async def discover_nearby_locations(
+        self,
+        latitude: float,
+        longitude: float,
+    ) -> list[dict[str, Any]]:
+        """Khám phá nhiều POI trong 500m và trả danh sách."""
+
+        # Dùng Wikipedia tiếng Việt làm nguồn Discovery thống nhất.
+        source_language = "vi"
+
+        results = await asyncio.wait_for(
+            self.content_service.search_nearby(
+                latitude=latitude,
+                longitude=longitude,
+                radius=self.SEARCH_RADIUS_METERS,
+                limit=self.DISCOVERY_LIMIT,
+                lang=source_language,
+            ),
+            timeout=self.CONTENT_TIMEOUT_SECONDS,
+        )
+
+        # Lấy các POI đã tồn tại trong phạm vi tìm kiếm.
+        existing_nearby = find_nearby(
+            session=self.session,
+            latitude=latitude,
+            longitude=longitude,
+            search_radius_meters=self.SEARCH_RADIUS_METERS,
+        )
+
+        known_locations = [location for location, _ in existing_nearby]
+
+        # Tránh trùng tên gần cùng tọa độ.
+        def is_duplicate(title: str, lat: float, lon: float) -> bool:
+            for location in known_locations:
+                if location.latitude is None or location.longitude is None:
+                    continue
+
+                if location.name.strip().casefold() != title.strip().casefold():
+                    continue
+
+                distance = haversine(
+                    lat,
+                    lon,
+                    location.latitude,
+                    location.longitude,
+                )
+
+                if distance <= 100:
+                    return True
+
+            return False
+
+        for item in results:
+            if not isinstance(item, dict):
+                continue
+
+            title = item.get("title")
+            page_id = item.get("pageid")
+            lat = item.get("lat")
+            lon = item.get("lon")
+
+            if (
+                not isinstance(title, str)
+                or not title.strip()
+                or not isinstance(page_id, int)
+                or isinstance(page_id, bool)
+                or not isinstance(lat, int | float)
+                or isinstance(lat, bool)
+                or not isinstance(lon, int | float)
+                or isinstance(lon, bool)
+            ):
+                continue
+
+            lat = float(lat)
+            lon = float(lon)
+
+            try:
+                distance = haversine(
+                    latitude,
+                    longitude,
+                    lat,
+                    lon,
+                )
+            except ValueError:
+                continue
+
+            if distance > self.SEARCH_RADIUS_METERS:
+                continue
+
+            # Chống trùng bằng định danh Wikimedia.
+            existing = poi_repository.get_location_by_source_page(
+                self.session,
+                source_lang=source_language,
+                source_page_id=page_id,
+            )
+
+            if existing is not None:
+                continue
+
+            # Chống trùng với POI nhập thủ công.
+            if is_duplicate(title, lat, lon):
+                continue
+
+            location = poi_repository.create_location(
+                self.session,
+                name=title.strip(),
+                latitude=lat,
+                longitude=lon,
+                radius=self.ACTIVATION_RADIUS_METERS,
+                source="wikimedia",
+                source_lang=source_language,
+                source_title=title.strip(),
+                source_page_id=page_id,
+                is_ready=True,
+            )
+
+            known_locations.append(location)
+
+            logger.info(
+                "Đã lưu POI Wikimedia: id=%s, title=%s",
+                location.id,
+                location.name,
+            )
+
+        # Lấy lại dữ liệu SQLite sau Discovery.
+        nearby = find_nearby(
+            session=self.session,
+            latitude=latitude,
+            longitude=longitude,
+            search_radius_meters=self.SEARCH_RADIUS_METERS,
+        )
+
+        return [
+            {
+                "location": {
+                    "id": location.id,
+                    "name": location.name,
+                    "description_source": location.description_source,
+                    "latitude": location.latitude,
+                    "longitude": location.longitude,
+                    "radius": location.radius,
+                    "source": location.source,
+                    "source_lang": location.source_lang,
+                    "source_title": location.source_title,
+                    "source_page_id": location.source_page_id,
+                    "source_url": location.source_url,
+                    "is_ready": location.is_ready,
+                },
+                "distance_meters": round(distance, 2),
+                "should_activate": choose_activation(
+                    distance,
+                    location.radius,
+                ),
+            }
+            for location, distance in nearby
+        ]

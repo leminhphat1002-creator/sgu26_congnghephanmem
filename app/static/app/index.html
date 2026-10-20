@@ -6,115 +6,149 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>GPS Audio Guide - Thuyết minh tự động</title>
+    <title>GPS Audio Guide</title>
 
     <link rel="stylesheet" href="/static/app/style.css">
     <script src="/static/app/script.js" defer></script>
 </head>
 
 <body>
-    <div class="container">
-        <header class="header">
-            <span class="eyebrow">GPS AUDIO GUIDE</span>
-            <h1>Thuyết minh du lịch tự động</h1>
-            <p>
-                Khám phá địa điểm xung quanh bạn bằng GPS,
-                Wikipedia và công nghệ giọng nói.
-            </p>
-        </header>
+<div class="container">
 
-        <main>
-            <section class="card">
-                <h2>Vị trí của bạn</h2>
+    <header class="header">
+        <span class="eyebrow">GPS AUDIO GUIDE</span>
+        <h1>Khám phá địa điểm xung quanh</h1>
+        <p>
+            Tìm địa điểm gần bạn, lựa chọn nơi muốn khám phá
+            và nghe thuyết minh bằng ngôn ngữ yêu thích.
+        </p>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>Vị trí và ngôn ngữ</h2>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="latitude">Vĩ độ</label>
+                    <input
+                        id="latitude"
+                        type="number"
+                        step="any"
+                        min="-90"
+                        max="90"
+                        value="10.7769"
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="longitude">Kinh độ</label>
+                    <input
+                        id="longitude"
+                        type="number"
+                        step="any"
+                        min="-180"
+                        max="180"
+                        value="106.6955"
+                    >
+                </div>
+            </div>
+
+            <div class="field language-field">
+                <label for="language">Ngôn ngữ thuyết minh</label>
+                <select id="language">
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語</option>
+                </select>
+            </div>
+
+            <button
+                id="gpsButton"
+                type="button"
+                class="secondary-button"
+            >
+                Lấy vị trí hiện tại
+            </button>
+
+            <button
+                id="detectButton"
+                type="button"
+                class="primary-button"
+            >
+                Tìm địa điểm xung quanh
+            </button>
+
+            <div class="auto-gps-section">
+                <h3>Theo dõi GPS tự động</h3>
                 <p class="description">
-                    Sử dụng GPS hiện tại hoặc nhập tọa độ để thử nghiệm.
+                    Tự cập nhật danh sách khi bạn di chuyển.
+                    Không tự phát âm thanh.
                 </p>
 
-                <div class="form-grid">
-                    <div class="field">
-                        <label for="latitude">Vĩ độ (Latitude)</label>
-                        <input
-                            type="number"
-                            id="latitude"
-                            step="any"
-                            min="-90"
-                            max="90"
-                            value="10.7769"
-                        >
-                    </div>
-
-                    <div class="field">
-                        <label for="longitude">Kinh độ (Longitude)</label>
-                        <input
-                            type="number"
-                            id="longitude"
-                            step="any"
-                            min="-180"
-                            max="180"
-                            value="106.6955"
-                        >
-                    </div>
-                </div>
-
                 <button
+                    id="autoGpsButton"
                     type="button"
-                    id="gpsButton"
                     class="secondary-button"
+                    aria-pressed="false"
                 >
-                    Lấy vị trí GPS hiện tại
+                    Bật theo dõi GPS
                 </button>
 
-                <div class="field language-field">
-                    <label for="language">Ngôn ngữ thuyết minh</label>
+                <p id="autoGpsStatus" class="gps-status">
+                    GPS tự động đang tắt.
+                </p>
+            </div>
 
-                    <select id="language">
-                        <option value="vi">Tiếng Việt</option>
-                        <option value="en">English</option>
-                        <option value="ja">日本語</option>
-                    </select>
-                </div>
+            <p id="statusMessage" role="status"
+               aria-live="polite"></p>
+        </section>
 
-                <button
-                    type="button"
-                    id="detectButton"
-                    class="primary-button"
-                >
-                    Phát hiện và thuyết minh
-                </button>
+        <section class="card" id="nearbySection">
+            <div class="section-heading">
+                <h2>Địa điểm xung quanh</h2>
+                <span class="radius-label">500 mét</span>
+            </div>
 
-                <p id="statusMessage" role="status" aria-live="polite"></p>
-            </section>
+            <p class="description">
+                Chọn một địa điểm để xem nội dung và nghe MP3.
+            </p>
 
-            <section class="card result-card" id="resultCard" hidden>
-                <span class="eyebrow">KẾT QUẢ PHÁT HIỆN</span>
+            <div id="locationList" class="location-list">
+                <p class="empty-message">
+                    Nhấn "Tìm địa điểm xung quanh" để bắt đầu.
+                </p>
+            </div>
+        </section>
 
-                <h2 id="locationName"></h2>
+        <section class="card result-card" id="resultCard" hidden>
+            <span class="eyebrow">THUYẾT MINH ĐỊA ĐIỂM</span>
 
-                <div class="metadata">
-                    <span id="distanceInfo"></span>
-                    <span id="languageInfo"></span>
-                </div>
+            <h2 id="locationName"></h2>
 
-                <h3>Nội dung thuyết minh</h3>
-                <p id="narrationText"></p>
+            <div class="metadata">
+                <span id="distanceInfo"></span>
+                <span id="languageInfo"></span>
+            </div>
 
-                <div id="audioSection" hidden>
-                    <h3>Nghe thuyết minh</h3>
+            <h3>Nội dung thuyết minh</h3>
+            <p id="narrationText"></p>
 
-                    <audio
-                        id="audioPlayer"
-                        controls
-                        preload="none"
-                    ></audio>
+            <div id="audioSection" hidden>
+                <h3>Nghe thuyết minh</h3>
+                <audio id="audioPlayer" controls preload="none">
+                </audio>
+                <p id="cacheInfo" class="description"></p>
+                <p id="fallbackNotice" class="fallback-notice" hidden></p>
 
-                    <p id="cacheInfo" class="description"></p>
-                </div>
-            </section>
-        </main>
+            </div>
+        </section>
+    </main>
 
-        <footer>
-            Đồ án Công nghệ phần mềm - GPS Audio Guide
-        </footer>
-    </div>
+    <footer>
+        Đồ án Công nghệ phần mềm - GPS Audio Guide
+    </footer>
+
+</div>
 </body>
 </html>

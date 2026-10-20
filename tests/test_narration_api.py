@@ -14,6 +14,7 @@ def mock_service():
     """Mock NarrationService, không gọi Wikipedia hay Edge TTS."""
     service = MagicMock()
     service.detect = AsyncMock()
+    service.narrate_location = AsyncMock()
 
     app.dependency_overrides[get_narration_service] = lambda: service
 
@@ -179,3 +180,55 @@ def test_detect_default_language(client, mock_service):
         longitude=106.6955,
         language="vi",
     )
+
+
+def test_narrate_selected_location_success(client, mock_service):
+    """Người dùng chọn POI theo ID để nghe thuyết minh."""
+    mock_service.narrate_location.return_value = {
+        "status": "success",
+        "location_id": 6,
+        "location_name": "Dinh Độc Lập",
+        "requested_language": "ja",
+        "content_language": "ja",
+        "fallback_used": False,
+        "text": "歴史的建造物です。",
+        "audio_url": "/audio/test.mp3",
+        "cache_hit": True,
+    }
+
+    response = client.post(
+        "/narration/locations/6",
+        params={"language": "ja"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["location_id"] == 6
+    assert response.json()["content_language"] == "ja"
+
+    mock_service.narrate_location.assert_awaited_once_with(
+        location_id=6,
+        language="ja",
+    )
+
+
+def test_narrate_selected_location_not_found(client, mock_service):
+    """ID địa điểm không tồn tại."""
+    mock_service.narrate_location.side_effect = ValueError("Không tìm thấy địa điểm")
+
+    response = client.post(
+        "/narration/locations/999999",
+        params={"language": "vi"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_narrate_selected_location_invalid_language(client, mock_service):
+    """Không chấp nhận ngôn ngữ chưa hỗ trợ."""
+    response = client.post(
+        "/narration/locations/6",
+        params={"language": "fr"},
+    )
+
+    assert response.status_code == 422
+    mock_service.narrate_location.assert_not_awaited()
