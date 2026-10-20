@@ -1,7 +1,7 @@
 """Lớp 3 (Data Access): client gọi Wikimedia API bằng httpx.
 
 Nhiệm vụ: geosearch, extracts, langlinks với timeout hữu hạn, User-Agent từ cấu hình,
-phân biệt lỗi upstream (timeout, rate_limited, upstream_error) với kết quả rỗng. (Tuần 3.)
+phân biệt lỗi upstream (timeout, rate_limited, upstream_error) với kết quả rỗng.
 """
 
 from __future__ import annotations
@@ -51,7 +51,6 @@ class WikimediaClient:
                     },
                 )
 
-                # Kiểm tra trực tiếp để tương thích với response mock trong test.
                 if response.status_code == 429:
                     raise AppError(
                         "rate_limited",
@@ -168,40 +167,79 @@ class WikimediaClient:
         title: str,
         lang: str = "vi",
     ) -> dict[str, Any] | None:
-        """Lấy phần giới thiệu và metadata của một trang Wikipedia."""
-        if not title.strip():
+        """Lấy nội dung Wikipedia, hỗ trợ tên không phân biệt hoa thường."""
+        if not isinstance(title, str) or not title.strip():
             raise ValueError("Title không được để trống")
 
-        data = await self._request(
+        title = title.strip()
+
+        async def fetch_page(page_title: str) -> dict[str, Any] | None:
+            data = await self._request(
+                lang,
+                {
+                    "action": "query",
+                    "prop": "extracts|info",
+                    "exintro": 1,
+                    "explaintext": 1,
+                    "inprop": "url",
+                    "redirects": 1,
+                    "titles": page_title,
+                },
+            )
+
+            query = data.get("query", {})
+            pages = query.get("pages", []) if isinstance(query, dict) else []
+
+            if not isinstance(pages, list) or not pages:
+                return None
+
+            page = pages[0]
+
+            if not isinstance(page, dict) or page.get("missing"):
+                return None
+
+            return {
+                "page_id": page.get("pageid"),
+                "title": page.get("title", page_title),
+                "extract": page.get("extract", ""),
+                "url": page.get("fullurl"),
+            }
+
+        # Thử truy xuất trang theo tiêu đề nhập vào.
+        page = await fetch_page(title)
+
+        if page is not None:
+            return page
+
+        # Nếu không tìm thấy, sử dụng Wikimedia Search API.
+        search_data = await self._request(
             lang,
             {
                 "action": "query",
-                "prop": "extracts|info",
-                "exintro": 1,
-                "explaintext": 1,
-                "inprop": "url",
-                "redirects": 1,
-                "titles": title,
+                "list": "search",
+                "srsearch": title,
+                "srnamespace": 0,
+                "srlimit": 10,
             },
         )
 
-        query = data.get("query", {})
-        pages = query.get("pages", []) if isinstance(query, dict) else []
+        query = search_data.get("query", {})
+        results = query.get("search", []) if isinstance(query, dict) else []
 
-        if not isinstance(pages, list) or not pages:
+        if not isinstance(results, list):
             return None
 
-        page = pages[0]
+        # Chỉ chấp nhận kết quả trùng tên khi bỏ qua hoa/thường.
+        for result in results:
+            if not isinstance(result, dict):
+                continue
 
-        if not isinstance(page, dict) or page.get("missing"):
-            return None
+            candidate = result.get("title", "")
 
-        return {
-            "page_id": page.get("pageid"),
-            "title": page.get("title", title),
-            "extract": page.get("extract", ""),
-            "url": page.get("fullurl"),
-        }
+            if isinstance(candidate, str) and candidate.casefold() == title.casefold():
+                return await fetch_page(candidate)
+
+        return None
 
     async def get_langlinks(
         self,

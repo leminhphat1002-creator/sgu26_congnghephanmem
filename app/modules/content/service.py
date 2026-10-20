@@ -8,6 +8,7 @@ content không import module nào khác. (Viết ở Tuần 3.)
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Any
 
 from app.modules.content.repository import ContentRepository
@@ -61,6 +62,12 @@ class ContentService:
 
         return candidate.rstrip(" ,;:-") + "…"
 
+    @staticmethod
+    def normalize_cache_title(title: str) -> str:
+        """Chuẩn hóa khóa cache, không phân biệt hoa/thường."""
+        normalized = unicodedata.normalize("NFC", title.strip())
+        return normalized.casefold()
+
     async def get_content(
         self,
         title: str,
@@ -71,6 +78,7 @@ class ContentService:
             raise ValueError("Tên địa điểm không được để trống")
 
         title = title.strip()
+        cache_title = self.normalize_cache_title(title)
 
         if lang not in self.SUPPORTED_LANGUAGES:
             raise ValueError(f"Ngôn ngữ chưa được hỗ trợ: {lang}")
@@ -82,7 +90,7 @@ class ContentService:
 
         for current_lang in fallback_order:
             if self.repository is not None:
-                cached = self.repository.get(title, current_lang)
+                cached = self.repository.get(cache_title, current_lang)
 
                 if cached is not None:
                     return {
@@ -105,7 +113,7 @@ class ContentService:
 
             if self.repository is not None:
                 self.repository.save(
-                    page_title=title,
+                    page_title=cache_title,
                     language=current_lang,
                     extract=extract,
                     source_url=page.get("url"),
@@ -122,17 +130,47 @@ class ContentService:
 
         return None
 
+    def get_cached_content(
+        self,
+        title: str,
+        lang: str,
+    ) -> dict[str, Any] | None:
+        """Đọc cache hiện có mà không gọi Wikimedia."""
+        if lang not in self.SUPPORTED_LANGUAGES:
+            raise ValueError(f"Ngôn ngữ chưa được hỗ trợ: {lang}")
+
+        if self.repository is None:
+            return None
+
+        cached = self.repository.get(
+            self.normalize_cache_title(title),
+            lang,
+        )
+
+        if cached is None:
+            return None
+
+        return {
+            "title": cached.page_title,
+            "extract": cached.extract,
+            "url": cached.source_url,
+            "language": cached.language,
+            "expires_at": cached.expires_at.isoformat(),
+        }
+
     def invalidate_content(
         self,
         title: str,
         lang: str | None = None,
     ) -> int:
-        """Xóa cache của một tiêu đề, tùy chọn giới hạn theo ngôn ngữ."""
+        """Xóa cache theo tiêu đề đã chuẩn hóa."""
         if self.repository is None:
             return 0
 
+        cache_title = self.normalize_cache_title(title)
+
         return self.repository.invalidate(
-            page_title=title.strip(),
+            page_title=cache_title,
             language=lang,
         )
 

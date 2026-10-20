@@ -18,9 +18,18 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
 def list_locations(
     session: DatabaseSession,
     limit: int = Query(default=100, ge=1, le=500),
+    name: str | None = Query(default=None),
 ):
-    """Lấy danh sách địa điểm."""
-    return repository.list_locations(session, limit=limit)
+    """Lấy danh sách địa điểm và tìm kiếm không phân biệt hoa thường."""
+
+    locations = repository.list_locations(session, limit=limit)
+
+    if name is not None and name.strip():
+        keyword = name.strip().casefold()
+
+        locations = [location for location in locations if keyword in location.name.casefold()]
+
+    return locations
 
 
 @router.post(
