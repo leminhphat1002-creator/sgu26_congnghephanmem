@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.auth import require_admin
 from app.main import app
 from app.modules.content.api import get_content_service
 
@@ -124,3 +125,10 @@ def test_delete_content_cache_all_languages(client, mock_service):
     assert response.json()["deleted_count"] == 2
 
     mock_service.invalidate_content.assert_called_once_with("Dinh Độc Lập", None)
+
+
+@pytest.fixture(autouse=True)
+def authorized_api_requests():
+    app.dependency_overrides[require_admin] = lambda: {"username": "api-test"}
+    yield
+    app.dependency_overrides.pop(require_admin, None)

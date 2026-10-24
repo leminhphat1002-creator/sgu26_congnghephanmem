@@ -16,7 +16,7 @@ def setup_service(monkeypatch):
     session = MagicMock()
 
     content_service = MagicMock()
-    content_service.get_content = AsyncMock()
+    content_service.get_location_content = AsyncMock()
     content_service.search_nearby = AsyncMock(return_value=[])
 
     audio_service = MagicMock()
@@ -61,7 +61,7 @@ def test_detect_success(setup_service):
 
     nearby.return_value = [(make_location(), 20.0)]
 
-    content.get_content.return_value = {
+    content.get_location_content.return_value = {
         "extract": "Nội dung thuyết minh Dinh Độc Lập.",
         "language": "vi",
         "fallback_used": False,
@@ -80,8 +80,8 @@ def test_detect_success(setup_service):
     assert result["audio_url"] == "/audio/example.mp3"
     assert result["cache_hit"] is False
 
-    content.get_content.assert_awaited_once_with(
-        title="Dinh Độc Lập",
+    content.get_location_content.assert_awaited_once_with(
+        location_id=1,
         lang="vi",
     )
     audio.synthesize.assert_awaited_once_with(
@@ -99,7 +99,7 @@ def test_detect_no_location(setup_service):
     result = asyncio.run(service.detect(0, 0, "vi"))
 
     assert result["status"] == "no_location"
-    content.get_content.assert_not_awaited()
+    content.get_location_content.assert_not_awaited()
     audio.synthesize.assert_not_awaited()
 
 
@@ -112,7 +112,7 @@ def test_detect_outside_activation_radius(setup_service):
     result = asyncio.run(service.detect(10.7769, 106.6955, "vi"))
 
     assert result["status"] == "no_location"
-    content.get_content.assert_not_awaited()
+    content.get_location_content.assert_not_awaited()
     audio.synthesize.assert_not_awaited()
 
 
@@ -121,7 +121,7 @@ def test_detect_no_content(setup_service):
     service, content, audio, nearby = setup_service
 
     nearby.return_value = [(make_location(), 10.0)]
-    content.get_content.return_value = None
+    content.get_location_content.return_value = None
 
     result = asyncio.run(service.detect(10.7769, 106.6955, "vi"))
 
@@ -139,7 +139,7 @@ def test_detect_skips_not_ready_location(setup_service):
         (make_location(location_id=2, name="Địa điểm B"), 20.0),
     ]
 
-    content.get_content.return_value = {
+    content.get_location_content.return_value = {
         "extract": "Thông tin địa điểm B.",
         "language": "vi",
         "fallback_used": False,
@@ -164,7 +164,7 @@ def test_detect_language_fallback(setup_service):
 
     nearby.return_value = [(make_location(), 10.0)]
 
-    content.get_content.return_value = {
+    content.get_location_content.return_value = {
         "extract": "English narration text.",
         "language": "en",
         "fallback_used": True,
@@ -194,7 +194,7 @@ def test_detect_content_timeout(setup_service):
 
     nearby.return_value = [(make_location(), 10.0)]
 
-    content.get_content.side_effect = TimeoutError()
+    content.get_location_content.side_effect = TimeoutError()
 
     result = asyncio.run(service.detect(10.7769, 106.6955, "vi"))
 
@@ -210,7 +210,7 @@ def test_detect_tts_unavailable(setup_service):
 
     nearby.return_value = [(make_location(), 10.0)]
 
-    content.get_content.return_value = {
+    content.get_location_content.return_value = {
         "extract": "Nội dung thuyết minh.",
         "language": "vi",
         "fallback_used": False,
@@ -237,7 +237,7 @@ def test_detect_content_upstream_error(setup_service):
 
     nearby.return_value = [(make_location(), 10.0)]
 
-    content.get_content.side_effect = AppError(
+    content.get_location_content.side_effect = AppError(
         "upstream_error",
         "Wikimedia không khả dụng",
         502,
@@ -261,7 +261,7 @@ def test_detect_real_content_timeout(setup_service, monkeypatch):
         await asyncio.sleep(0.1)
         return None
 
-    content.get_content.side_effect = slow_content
+    content.get_location_content.side_effect = slow_content
 
     result = asyncio.run(service.detect(10.7769, 106.6955, "vi"))
 
@@ -275,7 +275,7 @@ def test_detect_real_audio_timeout(setup_service, monkeypatch):
 
     nearby.return_value = [(make_location(), 10.0)]
 
-    content.get_content.return_value = {
+    content.get_location_content.return_value = {
         "extract": "Nội dung thuyết minh Dinh Độc Lập.",
         "language": "vi",
         "fallback_used": False,

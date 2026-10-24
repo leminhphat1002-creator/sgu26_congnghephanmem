@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core.auth import require_admin
 from app.core.db import Base, create_db_engine, get_db
 from app.main import app
 from app.modules.content.models import NarrationCache  # noqa: F401
@@ -145,3 +146,10 @@ def test_unsupported_language(test_environment):
 
     assert get_response.status_code == 422
     assert delete_response.status_code == 422
+
+
+@pytest.fixture(autouse=True)
+def authorized_api_requests():
+    app.dependency_overrides[require_admin] = lambda: {"username": "api-test"}
+    yield
+    app.dependency_overrides.pop(require_admin, None)

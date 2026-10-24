@@ -7,6 +7,13 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 
+def normalize_database_url(value: str) -> str:
+    for prefix in ("postgres://", "postgresql://"):
+        if value.startswith(prefix):
+            return "postgresql+psycopg://" + value[len(prefix) :]
+    return value
+
+
 def _read_float(name: str, default: float) -> float:
     raw = os.environ.get(name)
     if raw is None or raw.strip() == "":
@@ -31,7 +38,9 @@ class Settings:
     def from_env(cls) -> Settings:
         """Đọc cấu hình mới nhất từ môi trường (không cache, dùng cho Alembic và test)."""
         return cls(
-            database_url=os.environ.get("DATABASE_URL", "sqlite:///./data/app.db"),
+            database_url=normalize_database_url(
+                os.environ.get("DATABASE_URL", "sqlite:///./data/app.db")
+            ),
             audio_dir=os.environ.get("AUDIO_DIR", "./audio_files"),
             wikimedia_user_agent=os.environ.get(
                 "WIKIMEDIA_USER_AGENT",

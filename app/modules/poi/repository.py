@@ -114,3 +114,17 @@ def get_location_by_source_page(
         Location.source_page_id == source_page_id,
     )
     return session.scalars(statement).first()
+
+
+def list_narratable_locations(session: Session) -> list[Location]:
+    from app.modules.content.models import PoiNarration
+
+    statement = (
+        select(Location)
+        .where(
+            Location.is_ready.is_(True),
+            Location.id.in_(select(PoiNarration.location_id)),
+        )
+        .order_by(Location.id)
+    )
+    return list(session.scalars(statement))

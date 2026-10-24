@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.modules.content.models import NarrationCache
+from app.modules.content.models import NarrationCache, PoiNarration
 
 
 class ContentRepository:
@@ -94,3 +94,26 @@ class ContentRepository:
         result = self.session.execute(statement)
         self.session.commit()
         return result.rowcount or 0
+
+    def get_narration(self, location_id: int, language: str) -> dict | None:
+        row = self.session.scalar(
+            select(PoiNarration).where(
+                PoiNarration.location_id == location_id, PoiNarration.language == language
+            )
+        )
+        if row is None:
+            return None
+        return {"title": row.title, "extract": row.content, "language": row.language, "url": None}
+
+    def find_location_id(self, title: str) -> int | None:
+        from app.modules.poi.models import Location
+
+        # Python casefold hỗ trợ tên tiếng Việt, không phụ thuộc SQLite NOCASE.
+        normalized = title.strip().casefold()
+        for row in self.session.scalars(select(Location)):
+            if normalized in {
+                row.name.strip().casefold(),
+                (row.source_title or "").strip().casefold(),
+            }:
+                return row.id
+        return None

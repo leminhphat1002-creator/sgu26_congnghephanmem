@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from app.core.config import get_settings
+from app.core.config import get_settings, normalize_database_url
 
 
 class Base(DeclarativeBase):
@@ -19,7 +19,7 @@ class Base(DeclarativeBase):
 
 def create_db_engine(database_url: str) -> Engine:
     """Tạo engine; với SQLite thì tạo thư mục chứa file và bật foreign_keys."""
-    url = make_url(database_url)
+    url = make_url(normalize_database_url(database_url))
     is_sqlite = url.get_backend_name() == "sqlite"
     connect_args: dict[str, object] = {}
     if is_sqlite:
@@ -27,7 +27,11 @@ def create_db_engine(database_url: str) -> Engine:
         if url.database and url.database != ":memory:":
             Path(url.database).parent.mkdir(parents=True, exist_ok=True)
 
-    engine = create_engine(url, connect_args=connect_args)
+    options = {}
+    if url.get_backend_name() == "postgresql":
+        connect_args["connect_timeout"] = 10
+        options = {"pool_pre_ping": True, "pool_recycle": 300}
+    engine = create_engine(url, connect_args=connect_args, **options)
 
     if is_sqlite:
 

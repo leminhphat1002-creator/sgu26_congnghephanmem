@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Quản lý · Bát Tràng Audio Guide</title>
+    <link rel="stylesheet" href="/static/admin/style.css">
+    <script src="/static/admin/script.js" defer></script>
+</head>
+<body>
+<main id="loginView" class="login-layout">
+    <section class="login-story">
+        <a href="/" class="brand"><span class="brand-mark">B</span> BÁT TRÀNG</a>
+        <div class="story-content"><span class="eyebrow">KHÔNG GIAN QUẢN TRỊ</span>
+            <h1>Gìn giữ câu chuyện.<br>Kết nối hành trình.</h1>
+            <p>Quản lý điểm đến và những câu chuyện về làng gốm, trong một không gian.</p>
+            <div class="pottery-art" aria-hidden="true"><div class="vase"></div><div class="bowl"></div></div>
+        </div>
+        <p>Bát Tràng Audio Guide · Đồ án Công nghệ phần mềm</p>
+    </section>
+    <section class="login-panel">
+        <form id="loginForm" class="login-form">
+            <span class="eyebrow">CHÀO MỪNG TRỞ LẠI</span>
+            <h2>Đăng nhập quản lý</h2>
+            <p class="muted">Khách tham quan có thể <a href="/">vào trang khám phá</a> mà không cần tài khoản.</p>
+            <label for="username">Tên đăng nhập</label>
+            <input id="username" name="username" autocomplete="username" required maxlength="80">
+            <label for="password">Mật khẩu</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256">
+            <p id="loginMessage" class="error" role="alert"></p>
+            <button id="loginButton" class="primary" type="submit">Đăng nhập</button>
+            <p class="small muted">Tài khoản được chủ website cấp. Không mở đăng ký quản trị công khai.</p>
+        </form>
+    </section>
+</main>
+
+<div id="adminView" class="admin-shell" hidden>
+    <aside class="sidebar">
+        <a class="brand" href="/"><span class="brand-mark">B</span><span>BÁT TRÀNG<small>AUDIO GUIDE</small></span></a>
+        <span class="nav-label">QUẢN LÝ WEBSITE</span>
+        <nav aria-label="Quản trị">
+            <button class="nav-item active" data-pane="overview" type="button"><span>◫</span> Tổng quan</button>
+            <button class="nav-item" data-pane="locations" type="button"><span>⌖</span> Địa điểm</button>
+            <button class="nav-item" data-pane="content" type="button"><span>≡</span> Thuyết minh</button>
+            <button class="nav-item" data-pane="qr" type="button"><span>▦</span> Mã QR truy cập</button>
+        </nav>
+        <div class="sidebar-bottom"><a href="/" target="_blank" rel="noopener">Mở trang người dùng ↗</a>
+            <button id="logoutButton" type="button">Đăng xuất</button></div>
+    </aside>
+    <main class="workspace">
+        <header class="topbar"><div><p class="eyebrow">BÁT TRÀNG / QUẢN TRỊ</p><h1 id="pageTitle">Tổng quan</h1></div>
+            <div class="account"><span class="avatar">QL</span><span id="accountName"></span></div></header>
+        <p id="adminMessage" class="notice" role="status" aria-live="polite" hidden></p>
+
+        <section id="pane-overview" class="pane">
+            <div class="section-top"><div><h2>Nhịp hoạt động của website</h2><p class="muted">Dữ liệu thực tế từ địa điểm, nội dung và các yêu cầu thuyết minh.</p></div>
+                <button id="refreshButton" class="secondary" type="button">Làm mới</button></div>
+            <div id="stats" class="stats-grid"></div>
+            <div class="dashboard-grid">
+                <section class="panel"><div class="panel-heading"><h3>Lượt yêu cầu thuyết minh</h3><span class="pill">7 ngày · GMT+7</span></div>
+                    <p class="small muted">Đếm yêu cầu, không phải số người nghe hoặc lượt phát hoàn tất.</p><div id="usageChart" class="usage-chart"></div></section>
+                <section class="panel"><h3>Nội dung theo ngôn ngữ</h3><div id="languageStats"></div><p id="translationHint" class="small muted"></p></section>
+            </div>
+            <section class="panel"><div class="panel-heading"><h3>Hoạt động quản lý gần đây</h3><span class="pill">15 thao tác mới nhất</span></div>
+                <div class="table-wrap"><table><thead><tr><th>Thời gian</th><th>Tài khoản</th><th>Thao tác</th><th>Đối tượng</th></tr></thead><tbody id="activityBody"></tbody></table></div></section>
+        </section>
+
+        <section id="pane-locations" class="pane" hidden>
+            <div class="section-top"><div><h2>Danh sách địa điểm</h2><p class="muted">Cập nhật tọa độ, mô tả và trạng thái sẵn sàng.</p></div>
+                <button id="newLocationButton" class="primary" type="button">+ Thêm địa điểm</button></div>
+            <div class="editor-grid">
+                <section class="panel"><label class="sr-only" for="locationSearch">Tìm địa điểm</label><input id="locationSearch" type="search" placeholder="Tìm theo tên địa điểm…">
+                    <div class="table-wrap"><table><thead><tr><th>Địa điểm</th><th>Nội dung</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="locationsBody"></tbody></table></div></section>
+                <form id="locationForm" class="panel editor-form">
+                    <h3 id="locationEditorTitle">Thêm địa điểm</h3>
+                    <label for="locationNameInput">Tên địa điểm</label><input id="locationNameInput" maxlength="255" required>
+                    <label for="descriptionInput">Mô tả ngắn</label><textarea id="descriptionInput" rows="3" maxlength="2000"></textarea>
+                    <div class="form-row"><div><label for="latitudeInput">Vĩ độ</label><input id="latitudeInput" type="number" step="any" min="-90" max="90"></div>
+                        <div><label for="longitudeInput">Kinh độ</label><input id="longitudeInput" type="number" step="any" min="-180" max="180"></div></div>
+                    <label for="radiusInput">Bán kính kích hoạt (mét)</label><input id="radiusInput" type="number" min="1" max="10000" step="any" value="80" required>
+                    <label class="checkbox-label"><input id="readyInput" type="checkbox"> Sẵn sàng hiển thị</label>
+                    <p class="small muted">Địa điểm cần ít nhất một bài thuyết minh để xuất hiện trong danh sách khám phá từ xa.</p>
+                    <button id="saveLocationButton" class="primary" type="submit">Lưu địa điểm</button>
+                    <button id="cancelEditButton" class="secondary" type="button">Bỏ chọn</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="pane-content" class="pane" hidden>
+            <div class="section-top"><div><h2>Biên tập thuyết minh</h2><p class="muted">Lưu riêng từng bản Việt, Anh, Nhật. Không tự động dịch nội dung.</p></div></div>
+            <form id="narrationForm" class="panel content-editor">
+                <div class="form-row"><div><label for="contentLocation">Địa điểm</label><select id="contentLocation" required></select></div>
+                    <div><label for="contentLanguage">Ngôn ngữ</label><select id="contentLanguage"><option value="vi">Tiếng Việt</option><option value="en">English</option><option value="ja">日本語</option></select></div></div>
+                <p id="contentState" class="small muted"></p>
+                <label for="contentTitle">Tiêu đề theo ngôn ngữ</label><input id="contentTitle" required maxlength="255">
+                <label for="contentText">Nội dung thuyết minh</label><textarea id="contentText" rows="12" maxlength="900" required></textarea>
+                <div class="content-foot"><span id="charCount" class="small muted">0 / 900 ký tự</span><span class="small muted">Đổi nội dung sẽ tạo khóa MP3 mới khi khách yêu cầu nghe.</span></div>
+                <div class="actions"><button id="saveContentButton" class="primary" type="submit">Lưu nội dung</button><button id="deleteContentButton" class="danger-outline" type="button">Xóa bản ngôn ngữ này</button></div>
+            </form>
+        </section>
+
+        <section id="pane-qr" class="pane" hidden>
+            <div class="section-top"><div><h2>Một mã QR, mở cả hành trình</h2><p class="muted">Dành cho khách tham quan. Mã QR mở trang người dùng, không chứa tài khoản quản trị.</p></div></div>
+            <section class="panel qr-panel"><img src="/share/qr.svg" alt="QR truy cập trang khám phá" width="280" height="280">
+                <div><span class="eyebrow">LIÊN KẾT KHÁCH THAM QUAN</span><h3 id="qrTarget">Đang tải…</h3><p id="qrHint" class="muted"></p>
+                    <div class="actions"><a href="/share/qr.png" class="primary button-link" download="bat-trang-qr.png">Tải mã QR</a><a class="secondary button-link" href="/share" target="_blank" rel="noopener">Mở trang in QR ↗</a></div>
+                    <p class="small muted">Khi chuyển sang tên miền hoặc đổi IP, cấu hình lại PUBLIC_BASE_URL rồi tải mã QR mới.</p></div></section>
+        </section>
+    </main>
+</div>
+<dialog id="deleteDialog"><form method="dialog"><h2 id="deleteTitle">Xác nhận xóa</h2><p id="deleteDescription"></p>
+    <div class="actions"><button value="cancel" class="secondary">Hủy</button><button value="confirm" class="danger">Xóa</button></div></form></dialog>
+</body>
+</html>

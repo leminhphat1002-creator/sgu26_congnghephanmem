@@ -14,6 +14,8 @@ htmlcov/
 data/
 audio_files/
 .env
+deploy/.env
+deploy/settings.json
 
 # IDE / hệ điều hành
 .idea/

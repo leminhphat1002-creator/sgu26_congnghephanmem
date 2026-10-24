@@ -5,7 +5,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import require_admin
 from app.core.db import get_db
+from app.modules.admin.repository import AdminRepository
 from app.modules.poi import repository, service
 from app.modules.poi.schemas import LocationCreate, LocationRead, LocationUpdate
 
@@ -40,6 +42,7 @@ def list_locations(
 def create_location(
     data: LocationCreate,
     session: DatabaseSession,
+    identity: Annotated[dict, Depends(require_admin)],
 ):
     """Tạo địa điểm mới."""
     if (data.latitude is None) != (data.longitude is None):
@@ -49,10 +52,12 @@ def create_location(
         )
 
     try:
-        return repository.create_location(
+        location = repository.create_location(
             session,
             **data.model_dump(),
         )
+        AdminRepository(session).record(identity["username"], "create_location", str(location.id))
+        return location
     except Exception:
         session.rollback()
         raise
@@ -114,6 +119,7 @@ def update_location(
     location_id: int,
     data: LocationUpdate,
     session: DatabaseSession,
+    identity: Annotated[dict, Depends(require_admin)],
 ):
     """Cập nhật địa điểm."""
     changes = data.model_dump(exclude_unset=True)
@@ -123,6 +129,16 @@ def update_location(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Cần cung cấp ít nhất một trường để cập nhật.",
         )
+
+    for field in ("name", "radius", "source", "is_ready"):
+        if field in changes and changes[field] is None:
+            raise HTTPException(422, f"{field} không được để trống.")
+    existing = repository.get_location(session, location_id)
+    if existing is not None:
+        latitude = changes.get("latitude", existing.latitude)
+        longitude = changes.get("longitude", existing.longitude)
+        if (latitude is None) != (longitude is None):
+            raise HTTPException(422, "Vĩ độ và kinh độ phải cùng có hoặc cùng không có.")
 
     try:
         location = repository.update_location(
@@ -142,6 +158,7 @@ def update_location(
             detail="Không tìm thấy địa điểm.",
         )
 
+    AdminRepository(session).record(identity["username"], "update_location", str(location_id))
     return location
 
 
@@ -152,6 +169,7 @@ def update_location(
 def delete_location(
     location_id: int,
     session: DatabaseSession,
+    identity: Annotated[dict, Depends(require_admin)],
 ):
     """Xóa địa điểm."""
     deleted = repository.delete_location(session, location_id)
@@ -162,4 +180,5 @@ def delete_location(
             detail="Không tìm thấy địa điểm.",
         )
 
+    AdminRepository(session).record(identity["username"], "delete_location", str(location_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)

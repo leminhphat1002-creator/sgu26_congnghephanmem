@@ -32,6 +32,9 @@ const languageNames = {
 };
 
 const SEARCH_RADIUS = 500;
+let explorationMode = "remote";
+const modeStatus = document.getElementById("modeStatus");
+let gpsVersion = 0;
 const MIN_MOVEMENT_METERS = 25;
 const MIN_REFRESH_INTERVAL_MS = 5000;
 
@@ -126,7 +129,8 @@ function displayNarration(data, distance) {
         data.location_name || "Địa điểm";
 
     distanceInfo.textContent =
-        `Khoảng cách: ${Math.round(distance)} m`;
+        distance == null ? "Khám phá từ xa — không sử dụng GPS" :
+        `${explorationMode === "demo" ? "Khoảng cách từ vị trí mẫu" : "Khoảng cách"}: ${Math.round(distance)} m`;
 
     
 const requestedName =
@@ -157,28 +161,6 @@ if (data.fallback_used) {
             ? "MP3 được lấy từ cache."
             : "MP3 vừa được tạo.";
     }
-    
-fallbackNotice.hidden = true;
-fallbackNotice.textContent = "";
-
-if (data.fallback_used) {
-    const requestedName =
-        languageNames[data.requested_language] ||
-        data.requested_language;
-
-    const actualName =
-        languageNames[data.content_language] ||
-        data.content_language;
-
-    fallbackNotice.textContent =
-        `Không có nội dung ${requestedName}. ` +
-        `Đang sử dụng bản ${actualName} thay thế.`;
-
-    // Hiển thị cảnh báo trong khu vực nghe thuyết minh.
-    audioSection.hidden = false;
-    fallbackNotice.hidden = false;
-}
-
 
     
 if (data.status === "success") {
@@ -218,7 +200,7 @@ function renderLocations() {
         const empty = document.createElement("p");
         empty.className = "empty-message";
         empty.textContent =
-            "Không tìm thấy địa điểm đã lưu trong phạm vi 500 mét.";
+            "Chưa có địa điểm trong phạm vi này. Chọn Khám phá từ xa để xem toàn bộ địa điểm.";
 
         locationList.appendChild(empty);
         return;
@@ -242,7 +224,8 @@ function renderLocations() {
 
         const description = document.createElement("p");
         description.textContent =
-            `Cách ${Math.round(item.distance_meters)} m`;
+            item.distance_meters == null ? (location.description_source || "Khám phá từ xa") :
+            `${explorationMode === "demo" ? "Từ vị trí mẫu: " : "Cách "}${Math.round(item.distance_meters)} m`;
 
         const button = document.createElement("button");
         button.type = "button";
@@ -266,7 +249,7 @@ function renderLocations() {
 
 
 // Lấy toàn bộ POI trong 500m từ SQLite
-async function loadNearby(latitude, longitude) {
+async function loadNearby(latitude, longitude, remote = false) {
     if (listController) {
         listController.abort();
     }
@@ -285,7 +268,7 @@ async function loadNearby(latitude, longitude) {
 
     try {
         const response = await fetch(
-            `/narration/nearby?${params.toString()}`,
+            remote ? "/narration/catalog" : `/narration/nearby?${params.toString()}`,
             { signal: controller.signal }
         );
 
@@ -306,7 +289,9 @@ async function loadNearby(latitude, longitude) {
         renderLocations();
 
         showStatus(
-            `Đã tìm thấy ${data.length} địa điểm trong 500 mét.`,
+            remote ? `Có ${data.length} địa điểm để khám phá từ xa.` :
+                (data.length ? `Đã tìm thấy ${data.length} địa điểm trong 500 mét.` :
+                "Bạn đang ở xa các địa điểm đã lưu. Chọn Khám phá từ xa để tiếp tục."),
             "success"
         );
 
@@ -314,7 +299,7 @@ async function loadNearby(latitude, longitude) {
         lastSearchTime = Date.now();
 
     } catch (error) {
-        if (error.name !== "AbortError") {
+        if (error.name !== "AbortError" && version === listVersion) {
             showStatus(error.message, "error");
         }
     } finally {
@@ -393,6 +378,8 @@ async function selectLocation(item) {
 
 // Tìm theo tọa độ đang nhập
 function searchFromInputs() {
+    stopAutoGps();
+    setMode("coordinates");
     try {
         const coords = readCoordinates();
         void loadNearby(coords.latitude, coords.longitude);
@@ -404,6 +391,9 @@ function searchFromInputs() {
 
 // Lấy GPS thiết bị một lần
 function getCurrentLocation() {
+    stopAutoGps();
+    setMode("gps");
+    const requestVersion = gpsVersion;
     if (!navigator.geolocation) {
         showStatus("Trình duyệt không hỗ trợ GPS.", "error");
         return;
@@ -414,6 +404,7 @@ function getCurrentLocation() {
 
     navigator.geolocation.getCurrentPosition(
         (position) => {
+            if (requestVersion !== gpsVersion) return;
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
 
@@ -424,6 +415,7 @@ function getCurrentLocation() {
             void loadNearby(latitude, longitude);
         },
         (error) => {
+            if (requestVersion !== gpsVersion) return;
             showStatus(
                 "Không thể lấy GPS: " + error.message,
                 "error"
@@ -484,6 +476,7 @@ function onPositionChanged(position) {
 
 // Bật theo dõi GPS
 function startAutoGps() {
+    setMode("gps");
     if (!navigator.geolocation) {
         showStatus("Thiết bị không hỗ trợ GPS.", "error");
         return;
@@ -560,3 +553,41 @@ languageSelect.addEventListener("change", () => {
 });
 
 window.addEventListener("pagehide", stopAutoGps);
+
+
+function setMode(mode) {
+    explorationMode = mode;
+    gpsVersion++;
+    gpsButton.disabled = false;
+    if (listController) listController.abort();
+    listVersion++;
+    clearNarration();
+    nearbyLocations = [];
+    selectedLocationId = null;
+    renderLocations();
+    const labels = {
+        remote: "Khám phá từ xa — không sử dụng GPS.",
+        demo: "Vị trí mô phỏng tại Bát Tràng — không phải vị trí thiết bị.",
+        gps: "Sử dụng GPS thực tế của thiết bị.",
+        coordinates: "Tìm theo tọa độ nhập thủ công — không phải GPS thiết bị."
+    };
+    modeStatus.textContent = labels[mode];
+    document.getElementById("listHeading").textContent = mode === "remote" ? "Địa điểm Bát Tràng" : "Địa điểm xung quanh";
+    document.getElementById("listScope").textContent = mode === "remote" ? "Khám phá từ xa" : "500 mét";
+}
+
+document.getElementById("catalogButton").addEventListener("click", () => {
+    stopAutoGps();
+    setMode("remote");
+    void loadNearby(null, null, true);
+});
+
+document.getElementById("demoButton").addEventListener("click", () => {
+    stopAutoGps();
+    setMode("demo");
+    latitudeInput.value = "20.978400";
+    longitudeInput.value = "105.914600";
+    void loadNearby(20.9784, 105.9146);
+});
+
+void loadNearby(null, null, true);

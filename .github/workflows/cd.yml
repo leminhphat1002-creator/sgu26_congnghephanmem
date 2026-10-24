@@ -1,0 +1,108 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  actions: read
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  delivery:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: x64
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-package-${{ github.event.workflow_run.head_sha }}
+          path: ${{ runner.temp }}/package
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify exact tested package
+        env:
+          REVISION: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          python -c "import os; from pathlib import Path; from deploy.windows_release import verify, digest; p=Path(os.environ['RUNNER_TEMP'])/'package/bat-trang-windows.zip'; assert digest(p)==p.with_suffix('.zip.sha256').read_text().strip(); verify(p, os.environ['REVISION'])"
+          if ($LASTEXITCODE -ne 0) { throw 'Windows package verification failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-${{ github.event.workflow_run.head_sha }}
+          path: ${{ runner.temp }}/package/*
+          retention-days: 30
+          compression-level: 0
+          overwrite: true
+      - name: Delivery status
+        env:
+          DEPLOY_ENABLED: ${{ vars.DEPLOY_ENABLED }}
+          REVISION: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          "Windows ZIP verified for commit: $env:REVISION" >> $env:GITHUB_STEP_SUMMARY
+          if ($env:DEPLOY_ENABLED -ne 'true') {
+            'Deployment is disabled. Download the ZIP from this run. No server was contacted.' >> $env:GITHUB_STEP_SUMMARY
+          }
+
+  deploy-windows:
+    needs: delivery
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: windows-2025
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.PUBLIC_BASE_URL }}
+    concurrency:
+      group: production-deployment
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Skip an obsolete main commit
+        id: current
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVISION: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          $current = gh api "repos/$env:GITHUB_REPOSITORY/commits/main" --jq .sha
+          if ($LASTEXITCODE -ne 0) { throw 'Could not check current main commit' }
+          "deploy=$($current -eq $env:REVISION)".ToLowerInvariant() >> $env:GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        if: steps.current.outputs.deploy == 'true'
+        with:
+          name: windows-package-${{ github.event.workflow_run.head_sha }}
+          path: ${{ runner.temp }}/package
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy through Windows OpenSSH and verify revision
+        if: steps.current.outputs.deploy == 'true'
+        env:
+          REVISION: ${{ github.event.workflow_run.head_sha }}
+          SEQUENCE: ${{ github.event.workflow_run.run_number }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || 'C:\BatTrang' }}
+          DEPLOY_PYTHON: ${{ vars.DEPLOY_PYTHON }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+        run: |
+          & ./deploy/remote.ps1

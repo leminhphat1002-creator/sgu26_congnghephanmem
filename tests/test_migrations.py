@@ -58,3 +58,40 @@ def test_defaults_and_unique_source_constraint(db_url):
     with pytest.raises(IntegrityError), engine.begin() as conn:
         conn.execute(insert_wiki)
     engine.dispose()
+
+
+def test_curated_migration_preserves_old_data(db_url):
+    config = _alembic_config()
+    command.upgrade(config, "36f391114b26")
+    engine = create_db_engine(db_url)
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO locations (name) VALUES ('Existing POI')"))
+    command.upgrade(config, "head")
+    with engine.begin() as conn:
+        assert conn.scalar(text("SELECT name FROM locations WHERE id=1")) == "Existing POI"
+        conn.execute(
+            text(
+                "INSERT INTO poi_narrations (location_id, language, title, content) "
+                "VALUES (1, 'vi', 'Title', 'Persistent content')"
+            )
+        )
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO poi_narrations (location_id, language, title, content) "
+                "VALUES (1, 'vi', 'Duplicate', 'Duplicate')"
+            )
+        )
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO poi_narrations (location_id, language, title, content) "
+                "VALUES (999, 'en', 'Orphan', 'Orphan')"
+            )
+        )
+    command.downgrade(config, "36f391114b26")
+    assert "poi_narrations" not in inspect(engine).get_table_names()
+    with engine.connect() as conn:
+        assert conn.scalar(text("SELECT count(*) FROM locations")) == 1
+    command.upgrade(config, "head")
+    engine.dispose()

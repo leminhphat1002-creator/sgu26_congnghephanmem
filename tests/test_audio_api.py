@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.auth import require_admin
 from app.main import app
 from app.modules.audio.api import get_audio_service
 from app.modules.audio.service import AudioService
@@ -175,3 +176,10 @@ def test_create_audio_tts_unavailable(client, audio_service):
 
     assert response.status_code == 503
     assert response.json()["detail"]["code"] == "tts_unavailable"
+
+
+@pytest.fixture(autouse=True)
+def authorized_api_requests():
+    app.dependency_overrides[require_admin] = lambda: {"username": "api-test"}
+    yield
+    app.dependency_overrides.pop(require_admin, None)

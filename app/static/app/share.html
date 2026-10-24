@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Quét QR khám phá Bát Tràng</title>
+    <link rel="stylesheet" href="/static/app/style.css">
+    <script src="/static/app/share.js" defer></script>
+</head>
+<body>
+<main class="container share-page">
+    <header class="header">
+        <span class="eyebrow">BÁT TRÀNG AUDIO GUIDE</span>
+        <h1>Quét mã. Bắt đầu khám phá.</h1>
+        <p>Mở camera điện thoại, quét mã QR và nghe câu chuyện làng gốm.</p>
+    </header>
+    <section class="card qr-card">
+        <img id="shareQr" src="/share/qr.svg" alt="Mã QR mở trang người dùng Bát Tràng" width="300" height="300">
+        <p id="shareUrl"></p>
+        <p id="shareHint" role="status">Đang kiểm tra đường dẫn…</p>
+        <div class="share-actions">
+            <a class="primary-button button-link" href="/share/qr.png" download="bat-trang-qr.png">Tải mã QR</a>
+            <button id="copyShare" class="secondary-button" type="button">Sao chép liên kết</button>
+            <button id="printShare" class="secondary-button" type="button">In mã QR</button>
+        </div>
+        <a href="/">Vào trang khám phá</a>
+    </section>
+</main>
+</body>
+</html>

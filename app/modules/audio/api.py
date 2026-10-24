@@ -12,6 +12,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
+from app.core.auth import require_admin
 from app.modules.audio.schemas import TTSRequest, TTSResponse
 from app.modules.audio.service import AudioService
 from app.modules.audio.store import AudioStore
@@ -25,7 +26,7 @@ def get_audio_service() -> AudioService:
     return AudioService()
 
 
-@router.post("/audio/tts", response_model=TTSResponse)
+@router.post("/audio/tts", response_model=TTSResponse, dependencies=[Depends(require_admin)])
 async def create_audio(
     request: TTSRequest,
     service: Annotated[AudioService, Depends(get_audio_service)],

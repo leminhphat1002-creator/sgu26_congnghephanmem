@@ -6,7 +6,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>GPS Audio Guide</title>
+    <title>Bát Tràng Audio Guide</title>
 
     <link rel="stylesheet" href="/static/app/style.css">
     <script src="/static/app/script.js" defer></script>
@@ -15,18 +15,25 @@
 <body>
 <div class="container">
 
+    <nav class="public-nav" aria-label="Liên kết website"><a href="/share">Mã QR truy cập</a><a href="/admin">Đăng nhập quản lý</a></nav>
     <header class="header">
-        <span class="eyebrow">GPS AUDIO GUIDE</span>
-        <h1>Khám phá địa điểm xung quanh</h1>
+        <span class="eyebrow">BÁT TRÀNG AUDIO GUIDE</span>
+        <h1>Khám phá làng gốm Bát Tràng</h1>
         <p>
-            Tìm địa điểm gần bạn, lựa chọn nơi muốn khám phá
+            Khám phá từ xa hoặc bật GPS khi đến làng gốm, chọn nơi muốn khám phá
             và nghe thuyết minh bằng ngôn ngữ yêu thích.
         </p>
     </header>
 
     <main>
         <section class="card">
-            <h2>Vị trí và ngôn ngữ</h2>
+            <h2>Khám phá theo cách của bạn</h2>
+            <p>Không cần ở Bát Tràng để đọc và nghe thuyết minh.</p>
+            <button id="catalogButton" type="button" class="primary-button">Khám phá từ xa</button>
+            <button id="demoButton" type="button" class="secondary-button">Trải nghiệm vị trí mẫu tại Bát Tràng</button>
+            <p id="modeStatus" role="status">Khám phá từ xa — không sử dụng GPS.</p>
+            <p class="description">Dữ liệu demo: tọa độ minh họa và bài thuyết minh mẫu cần được xác minh trước khi tham quan thực tế.</p>
+            <h3>Vị trí và ngôn ngữ</h3>
 
             <div class="form-grid">
                 <div class="field">
@@ -37,7 +44,7 @@
                         step="any"
                         min="-90"
                         max="90"
-                        value="10.7769"
+                        value="20.978400"
                     >
                 </div>
 
@@ -49,7 +56,7 @@
                         step="any"
                         min="-180"
                         max="180"
-                        value="106.6955"
+                        value="105.914600"
                     >
                 </div>
             </div>
@@ -106,8 +113,8 @@
 
         <section class="card" id="nearbySection">
             <div class="section-heading">
-                <h2>Địa điểm xung quanh</h2>
-                <span class="radius-label">500 mét</span>
+                <h2 id="listHeading">Địa điểm Bát Tràng</h2>
+                <span id="listScope" class="radius-label">Khám phá từ xa</span>
             </div>
 
             <p class="description">
@@ -146,7 +153,7 @@
     </main>
 
     <footer>
-        Đồ án Công nghệ phần mềm - GPS Audio Guide
+        Đồ án Công nghệ phần mềm — Bát Tràng Audio Guide
     </footer>
 
 </div>

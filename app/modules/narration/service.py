@@ -1,14 +1,4 @@
-"""Lớp Business của Narration: điều phối POI, Content và Audio.
-
-Quy trình:
-1. Nhận GPS và ngôn ngữ.
-2. Tìm POI trong SQLite.
-3. Nếu chưa có POI phù hợp, tìm từ Wikimedia Geosearch.
-4. Kiểm tra bán kính kích hoạt.
-5. Lấy nội dung Wikimedia hoặc cache SQLite.
-6. Tạo MP3 bằng Edge TTS hoặc lấy từ cache.
-7. Trả kết quả thuyết minh.
-"""
+"""Điều phối địa điểm và nội dung SQLite với dịch vụ tạo MP3."""
 
 from __future__ import annotations
 
@@ -25,7 +15,6 @@ from app.modules.poi import repository as poi_repository
 from app.modules.poi.service import (
     choose_activation,
     find_nearby,
-    haversine,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,8 +27,6 @@ class NarrationService:
     AUDIO_TIMEOUT_SECONDS = 20
 
     SEARCH_RADIUS_METERS = 500
-    ACTIVATION_RADIUS_METERS = 80
-    DISCOVERY_LIMIT = 20
 
     def __init__(
         self,
@@ -50,126 +37,6 @@ class NarrationService:
         self.session = session
         self.content_service = content_service
         self.audio_service = audio_service
-
-    async def discover_location(
-        self,
-        latitude: float,
-        longitude: float,
-        language: str = "vi",
-    ) -> Any | None:
-        """Tìm và lưu POI Wikimedia khi SQLite chưa có POI phù hợp."""
-
-        # 1. Tìm các bài Wikipedia có tọa độ gần GPS.
-        results = await asyncio.wait_for(
-            self.content_service.search_nearby(
-                latitude=latitude,
-                longitude=longitude,
-                radius=self.SEARCH_RADIUS_METERS,
-                limit=self.DISCOVERY_LIMIT,
-                lang=language,
-            ),
-            timeout=self.CONTENT_TIMEOUT_SECONDS,
-        )
-
-        candidates = []
-
-        # 2. Kiểm tra dữ liệu và tính khoảng cách thực tế.
-        for item in results:
-            if not isinstance(item, dict):
-                continue
-
-            title = item.get("title")
-            page_id = item.get("pageid")
-            poi_latitude = item.get("lat")
-            poi_longitude = item.get("lon")
-
-            if (
-                not isinstance(title, str)
-                or not title.strip()
-                or not isinstance(page_id, int)
-                or isinstance(page_id, bool)
-                or not isinstance(poi_latitude, int | float)
-                or isinstance(poi_latitude, bool)
-                or not isinstance(poi_longitude, int | float)
-                or isinstance(poi_longitude, bool)
-            ):
-                continue
-
-            try:
-                distance = haversine(
-                    latitude,
-                    longitude,
-                    float(poi_latitude),
-                    float(poi_longitude),
-                )
-            except ValueError:
-                continue
-
-            # Chỉ chọn địa điểm trong bán kính kích hoạt.
-            if not choose_activation(
-                distance,
-                self.ACTIVATION_RADIUS_METERS,
-            ):
-                continue
-
-            candidates.append((distance, item))
-
-        # 3. Ưu tiên địa điểm gần GPS nhất.
-        candidates.sort(key=lambda candidate: candidate[0])
-
-        # 4. Kiểm tra trùng và lưu vào SQLite nếu cần.
-        for _, item in candidates:
-            page_id = item["pageid"]
-
-            existing = poi_repository.get_location_by_source_page(
-                self.session,
-                source_lang=language,
-                source_page_id=page_id,
-            )
-
-            if existing is not None:
-                if (
-                    existing.is_ready
-                    and existing.latitude is not None
-                    and existing.longitude is not None
-                ):
-                    distance = haversine(
-                        latitude,
-                        longitude,
-                        existing.latitude,
-                        existing.longitude,
-                    )
-
-                    if choose_activation(
-                        distance,
-                        existing.radius,
-                    ):
-                        return existing
-
-                continue
-
-            location = poi_repository.create_location(
-                self.session,
-                name=item["title"],
-                latitude=float(item["lat"]),
-                longitude=float(item["lon"]),
-                radius=self.ACTIVATION_RADIUS_METERS,
-                source="wikimedia",
-                source_lang=language,
-                source_title=item["title"],
-                source_page_id=page_id,
-                is_ready=True,
-            )
-
-            logger.info(
-                "Đã khám phá POI Wikimedia: id=%s, title=%s",
-                location.id,
-                location.name,
-            )
-
-            return location
-
-        return None
 
     async def detect(
         self,
@@ -203,31 +70,6 @@ class NarrationService:
                 selected_distance = distance
                 break
 
-        # 3. Nếu SQLite không có POI phù hợp, thử Wikimedia.
-        if selected_location is None:
-            try:
-                discovered = await self.discover_location(
-                    latitude=latitude,
-                    longitude=longitude,
-                    language=language,
-                )
-            except (TimeoutError, AppError) as exc:
-                logger.warning(
-                    "Không thể khám phá POI từ Wikimedia: %s",
-                    exc,
-                )
-                discovered = None
-
-            if discovered is not None:
-                selected_location = discovered
-                selected_distance = haversine(
-                    latitude,
-                    longitude,
-                    discovered.latitude,
-                    discovered.longitude,
-                )
-
-        # 4. Không tìm thấy POI trong SQLite và Wikimedia.
         if selected_location is None:
             return {
                 "status": "no_location",
@@ -239,14 +81,14 @@ class NarrationService:
         location_name = selected_location.name
         distance_meters = round(selected_distance, 2)
 
-        # Ưu tiên tiêu đề gốc từ Wikimedia.
+        # Tên dùng trong thông báo và nhật ký.
         title = selected_location.source_title or location_name
 
-        # 5. Lấy nội dung Wikipedia hoặc cache SQLite.
+        # Lấy nội dung biên soạn theo ID địa điểm.
         try:
             content = await asyncio.wait_for(
-                self.content_service.get_content(
-                    title=title,
+                self.content_service.get_location_content(
+                    location_id=location_id,
                     lang=language,
                 ),
                 timeout=self.CONTENT_TIMEOUT_SECONDS,
@@ -254,7 +96,7 @@ class NarrationService:
 
         except TimeoutError:
             logger.warning(
-                "Hết thời gian chờ Wikimedia: %s",
+                "Hết thời gian chờ database: %s",
                 title,
             )
 
@@ -264,12 +106,12 @@ class NarrationService:
                 "location_name": location_name,
                 "distance_meters": distance_meters,
                 "requested_language": language,
-                "message": ("Hết thời gian chờ nội dung Wikimedia."),
+                "message": ("Hết thời gian chờ nội dung database."),
             }
 
         except AppError as exc:
             logger.warning(
-                "Wikimedia lỗi với %s: %s",
+                "database lỗi với %s: %s",
                 title,
                 exc.code,
             )
@@ -358,7 +200,6 @@ class NarrationService:
         if not location.is_ready:
             raise ValueError("Địa điểm chưa sẵn sàng thuyết minh")
 
-        title = location.source_title or location.name
         result = {
             "location_id": location.id,
             "location_name": location.name,
@@ -368,7 +209,7 @@ class NarrationService:
 
         try:
             content = await asyncio.wait_for(
-                self.content_service.get_content(title=title, lang=language),
+                self.content_service.get_location_content(location_id=location.id, lang=language),
                 timeout=self.CONTENT_TIMEOUT_SECONDS,
             )
         except (TimeoutError, AppError) as exc:
@@ -414,154 +255,28 @@ class NarrationService:
         latitude: float,
         longitude: float,
     ) -> list[dict[str, Any]]:
-        """Khám phá nhiều POI trong 500m và trả danh sách."""
-
-        # Dùng Wikipedia tiếng Việt làm nguồn Discovery thống nhất.
-        source_language = "vi"
-
-        results = await asyncio.wait_for(
-            self.content_service.search_nearby(
-                latitude=latitude,
-                longitude=longitude,
-                radius=self.SEARCH_RADIUS_METERS,
-                limit=self.DISCOVERY_LIMIT,
-                lang=source_language,
-            ),
-            timeout=self.CONTENT_TIMEOUT_SECONDS,
-        )
-
-        # Lấy các POI đã tồn tại trong phạm vi tìm kiếm.
-        existing_nearby = find_nearby(
-            session=self.session,
-            latitude=latitude,
-            longitude=longitude,
-            search_radius_meters=self.SEARCH_RADIUS_METERS,
-        )
-
-        known_locations = [location for location, _ in existing_nearby]
-
-        # Tránh trùng tên gần cùng tọa độ.
-        def is_duplicate(title: str, lat: float, lon: float) -> bool:
-            for location in known_locations:
-                if location.latitude is None or location.longitude is None:
-                    continue
-
-                if location.name.strip().casefold() != title.strip().casefold():
-                    continue
-
-                distance = haversine(
-                    lat,
-                    lon,
-                    location.latitude,
-                    location.longitude,
-                )
-
-                if distance <= 100:
-                    return True
-
-            return False
-
-        for item in results:
-            if not isinstance(item, dict):
-                continue
-
-            title = item.get("title")
-            page_id = item.get("pageid")
-            lat = item.get("lat")
-            lon = item.get("lon")
-
-            if (
-                not isinstance(title, str)
-                or not title.strip()
-                or not isinstance(page_id, int)
-                or isinstance(page_id, bool)
-                or not isinstance(lat, int | float)
-                or isinstance(lat, bool)
-                or not isinstance(lon, int | float)
-                or isinstance(lon, bool)
-            ):
-                continue
-
-            lat = float(lat)
-            lon = float(lon)
-
-            try:
-                distance = haversine(
-                    latitude,
-                    longitude,
-                    lat,
-                    lon,
-                )
-            except ValueError:
-                continue
-
-            if distance > self.SEARCH_RADIUS_METERS:
-                continue
-
-            # Chống trùng bằng định danh Wikimedia.
-            existing = poi_repository.get_location_by_source_page(
-                self.session,
-                source_lang=source_language,
-                source_page_id=page_id,
-            )
-
-            if existing is not None:
-                continue
-
-            # Chống trùng với POI nhập thủ công.
-            if is_duplicate(title, lat, lon):
-                continue
-
-            location = poi_repository.create_location(
-                self.session,
-                name=title.strip(),
-                latitude=lat,
-                longitude=lon,
-                radius=self.ACTIVATION_RADIUS_METERS,
-                source="wikimedia",
-                source_lang=source_language,
-                source_title=title.strip(),
-                source_page_id=page_id,
-                is_ready=True,
-            )
-
-            known_locations.append(location)
-
-            logger.info(
-                "Đã lưu POI Wikimedia: id=%s, title=%s",
-                location.id,
-                location.name,
-            )
-
-        # Lấy lại dữ liệu SQLite sau Discovery.
-        nearby = find_nearby(
-            session=self.session,
-            latitude=latitude,
-            longitude=longitude,
-            search_radius_meters=self.SEARCH_RADIUS_METERS,
-        )
+        """Tìm địa điểm sẵn sàng trong SQLite, không khám phá từ Internet."""
+        nearby = find_nearby(self.session, latitude, longitude, self.SEARCH_RADIUS_METERS)
+        from app.modules.poi.schemas import LocationRead
 
         return [
             {
-                "location": {
-                    "id": location.id,
-                    "name": location.name,
-                    "description_source": location.description_source,
-                    "latitude": location.latitude,
-                    "longitude": location.longitude,
-                    "radius": location.radius,
-                    "source": location.source,
-                    "source_lang": location.source_lang,
-                    "source_title": location.source_title,
-                    "source_page_id": location.source_page_id,
-                    "source_url": location.source_url,
-                    "is_ready": location.is_ready,
-                },
+                "location": LocationRead.model_validate(location).model_dump(),
                 "distance_meters": round(distance, 2),
-                "should_activate": choose_activation(
-                    distance,
-                    location.radius,
-                ),
+                "should_activate": choose_activation(distance, location.radius),
             }
             for location, distance in nearby
+            if location.is_ready
+        ]
+
+    def list_catalog(self) -> list[dict]:
+        from app.modules.poi.schemas import LocationRead
+
+        return [
+            {
+                "location": LocationRead.model_validate(location).model_dump(),
+                "distance_meters": None,
+                "should_activate": False,
+            }
+            for location in poi_repository.list_narratable_locations(self.session)
         ]

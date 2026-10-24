@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -33,3 +33,20 @@ class NarrationCache(Base):
         DateTime,
         nullable=False,
     )
+
+
+class PoiNarration(Base):
+    """Nội dung biên soạn lâu dài, không phụ thuộc cache Wikimedia."""
+
+    __tablename__ = "poi_narrations"
+    __table_args__ = (
+        UniqueConstraint("location_id", "language", name="uq_poi_narration_language"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    location_id: Mapped[int] = mapped_column(
+        ForeignKey("locations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    language: Mapped[str] = mapped_column(String(8), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)

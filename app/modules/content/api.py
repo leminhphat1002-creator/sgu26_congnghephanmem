@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.core.auth import require_admin
 from app.core.db import get_db
 from app.modules.content.repository import ContentRepository
 from app.modules.content.service import ContentService
@@ -39,13 +40,13 @@ async def get_content(
     if result is None:
         raise HTTPException(
             status_code=404,
-            detail="Không tìm thấy nội dung Wikimedia",
+            detail="Không tìm thấy nội dung thuyết minh",
         )
 
     return result
 
 
-@router.delete("/content/cache")
+@router.delete("/content/cache", dependencies=[Depends(require_admin)])
 def invalidate_content_cache(
     title: Annotated[str, Query(min_length=1)],
     service: Annotated[ContentService, Depends(get_content_service)],
@@ -103,7 +104,9 @@ def get_location_narration_cache(
     }
 
 
-@router.delete("/locations/{location_id}/narrations/{language}")
+@router.delete(
+    "/locations/{location_id}/narrations/{language}", dependencies=[Depends(require_admin)]
+)
 def delete_location_narration_cache(
     location_id: int,
     language: str,

@@ -7,6 +7,7 @@ import hashlib
 import logging
 import re
 
+from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.modules.audio.store import AudioStore
 from app.modules.audio.tts_client import VOICE_BY_LANGUAGE, synthesize_mp3
@@ -20,7 +21,7 @@ class AudioService:
     """Tạo giọng nói, quản lý cache và tránh tạo trùng MP3."""
 
     def __init__(self, store: AudioStore | None = None) -> None:
-        self.store = store or AudioStore()
+        self.store = store or AudioStore(get_settings().audio_dir)
         self._locks: dict[str, asyncio.Lock] = {}
         self._locks_guard = asyncio.Lock()
 

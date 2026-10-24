@@ -1,174 +1,100 @@
-"""Kiểm thử tích hợp Narration với POI Discovery và SQLite."""
+"""Tích hợp catalog từ xa, GPS, seed và thuyết minh SQLite."""
 
-from collections.abc import Iterator
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
+from app.core.auth import require_admin
 from app.core.db import Base, create_db_engine, get_db
-from app.main import app
-from app.modules.narration.api import get_narration_service
-from app.modules.narration.service import NarrationService
-from app.modules.poi.models import Location  # noqa: F401
+from app.core.exceptions import AppError
+from app.main import create_app
+from app.modules.audio.api import get_audio_service
+from app.modules.content.models import PoiNarration
+from app.modules.poi.models import Location
+from scripts.seed_bat_trang import seed
 
 
 @pytest.fixture
-def environment(tmp_path) -> Iterator[dict]:
-    """Tạo SQLite riêng và mock các dịch vụ bên ngoài."""
-    database_url = f"sqlite:///{(tmp_path / 'integration.db').as_posix()}"
-    engine = create_db_engine(database_url)
-    Base.metadata.create_all(bind=engine)
+def environment(tmp_path):
+    engine = create_db_engine(f"sqlite:///{tmp_path / 'integration.db'}")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        seed(session)
+        seed(session)
+        application = create_app()
+        application.dependency_overrides[require_admin] = lambda: {"username": "integration-test"}
 
-    session_factory = sessionmaker(
-        bind=engine,
-        autoflush=False,
-        expire_on_commit=False,
-    )
-
-    content = MagicMock()
-    content.search_nearby = AsyncMock(
-        return_value=[
-            {
-                "pageid": 123456,
-                "title": "Dinh Độc Lập",
-                "lat": 10.7769,
-                "lon": 106.6955,
-            }
-        ]
-    )
-    content.get_content = AsyncMock(
-        return_value={
-            "extract": "Dinh Độc Lập là một di tích lịch sử.",
-            "language": "vi",
-            "fallback_used": False,
-        }
-    )
-
-    audio = MagicMock()
-    audio.synthesize = AsyncMock(
-        return_value={
-            "audio_filename": "test.mp3",
-            "cache_hit": False,
-        }
-    )
-
-    def override_get_db() -> Iterator[Session]:
-        with session_factory() as session:
+        def database():
             yield session
 
-    def override_narration_service() -> Iterator[NarrationService]:
-        with session_factory() as session:
-            yield NarrationService(
-                session=session,
-                content_service=content,
-                audio_service=audio,
-            )
-
-    app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[get_narration_service] = override_narration_service
-
-    try:
-        with TestClient(app) as client:
-            yield {
-                "client": client,
-                "session_factory": session_factory,
-                "content": content,
-                "audio": audio,
-            }
-    finally:
-        app.dependency_overrides.pop(get_db, None)
-        app.dependency_overrides.pop(get_narration_service, None)
-        engine.dispose()
+        audio = AsyncMock()
+        audio.synthesize.return_value = {"audio_filename": "sample.mp3", "cache_hit": True}
+        application.dependency_overrides[get_db] = database
+        application.dependency_overrides[get_audio_service] = lambda: audio
+        with TestClient(application) as client:
+            yield client, session, audio
+    engine.dispose()
 
 
-def test_detect_discovers_and_creates_audio(environment):
-    """SQLite trống -> Wikimedia -> SQLite -> Audio."""
-    client = environment["client"]
+def test_seed_is_idempotent_and_keeps_edits(environment):
+    _, session, _ = environment
+    assert session.scalar(select(func.count()).select_from(Location)) == 5
+    assert session.scalar(select(func.count()).select_from(PoiNarration)) == 15
+    row = session.scalar(select(PoiNarration))
+    row.content = "Nội dung đã biên tập"
+    session.commit()
+    seed(session)
+    session.refresh(row)
+    assert row.content == "Nội dung đã biên tập"
 
-    response = client.post(
-        "/narration/detect",
-        json={
-            "latitude": 10.7769,
-            "longitude": 106.6955,
-            "language": "vi",
-        },
-    )
 
+def test_remote_catalog_and_selected_narration(environment):
+    client, _, audio = environment
+    response = client.get("/narration/catalog")
     assert response.status_code == 200
-
-    data = response.json()
-
-    assert data["status"] == "success"
-    assert data["location_name"] == "Dinh Độc Lập"
-    assert data["content_language"] == "vi"
-    assert data["audio_url"] == "/audio/test.mp3"
-
-    with environment["session_factory"]() as session:
-        locations = session.query(Location).all()
-
-        assert len(locations) == 1
-        assert locations[0].source == "wikimedia"
-        assert locations[0].source_page_id == 123456
-
-    environment["content"].search_nearby.assert_awaited_once()
-    environment["audio"].synthesize.assert_awaited_once()
+    rows = response.json()
+    assert len(rows) == 5
+    assert all(row["distance_meters"] is None for row in rows)
+    result = client.post(f"/narration/locations/{rows[0]['location']['id']}?language=ja")
+    assert result.status_code == 200
+    assert result.json()["content_language"] == "ja"
+    assert result.json()["distance_meters"] is None
+    assert result.json()["audio_url"] == "/audio/sample.mp3"
+    assert audio.synthesize.await_args.kwargs["lang"] == "ja"
 
 
-def test_detect_reuses_discovered_location(environment):
-    """Lần thứ hai sử dụng POI SQLite, không tạo trùng."""
-    client = environment["client"]
-
-    payload = {
-        "latitude": 10.7769,
-        "longitude": 106.6955,
-        "language": "vi",
-    }
-
-    first = client.post("/narration/detect", json=payload)
-    second = client.post("/narration/detect", json=payload)
-
-    assert first.status_code == 200
-    assert second.status_code == 200
-    assert first.json()["status"] == "success"
-    assert second.json()["status"] == "success"
-
-    assert first.json()["location_id"] == second.json()["location_id"]
-
-    with environment["session_factory"]() as session:
-        assert session.query(Location).count() == 1
-
-    # Discovery chỉ được gọi ở request đầu tiên.
-    assert environment["content"].search_nearby.await_count == 1
+def test_real_gps_far_away_and_demo_nearby(environment):
+    client, _, audio = environment
+    assert client.get("/narration/nearby?latitude=0&longitude=0").json() == []
+    response = client.get("/narration/nearby?latitude=20.9784&longitude=105.9146")
+    assert len(response.json()) == 5
+    audio.synthesize.assert_not_awaited()
+    assert client.get("/narration/nearby?latitude=100&longitude=0").status_code == 422
 
 
-def test_detect_discovery_outside_radius(environment):
-    """Không kích hoạt POI Wikimedia cách GPS hơn 80 mét."""
-    client = environment["client"]
+def test_text_survives_tts_failure(environment):
+    client, _, audio = environment
+    audio.synthesize.side_effect = AppError("tts_unavailable", "Unavailable", 503)
+    location_id = client.get("/narration/catalog").json()[0]["location"]["id"]
+    result = client.post(f"/narration/locations/{location_id}?language=en").json()
+    assert result["status"] == "text_only"
+    assert result["text"]
+    assert result["audio_url"] is None
+    assert client.post("/narration/locations/99999").status_code == 404
 
-    environment["content"].search_nearby.return_value = [
-        {
-            "pageid": 654321,
-            "title": "Địa điểm xa",
-            "lat": 10.7789,
-            "lon": 106.6955,
-        }
-    ]
 
-    response = client.post(
-        "/narration/detect",
-        json={
-            "latitude": 10.7769,
-            "longitude": 106.6955,
-            "language": "vi",
-        },
+def test_delete_location_cascades_narrations(environment):
+    client, session, _ = environment
+    location_id = client.get("/narration/catalog").json()[0]["location"]["id"]
+    assert client.delete(f"/locations/{location_id}").status_code == 204
+    assert (
+        session.scalar(
+            select(func.count())
+            .select_from(PoiNarration)
+            .where(PoiNarration.location_id == location_id)
+        )
+        == 0
     )
-
-    assert response.status_code == 200
-    assert response.json()["status"] == "no_location"
-
-    with environment["session_factory"]() as session:
-        assert session.query(Location).count() == 0
-
-    environment["audio"].synthesize.assert_not_awaited()

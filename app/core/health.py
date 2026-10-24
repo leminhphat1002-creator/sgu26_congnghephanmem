@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+import os
+
+from fastapi import APIRouter, Response
 
 router = APIRouter(tags=["health"])
 
 
 @router.get("/health", summary="Kiểm tra service còn sống")
-def health() -> dict[str, str]:
+def health(response: Response) -> dict[str, str]:
+    response.headers["X-App-Revision"] = os.environ.get("APP_REVISION", "development")
     return {"status": "ok"}
