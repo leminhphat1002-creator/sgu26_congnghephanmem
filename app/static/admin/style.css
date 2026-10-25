@@ -33,7 +33,7 @@ h3 { font-size:16px; margin-bottom:16px; }
 .login-story .eyebrow { color:#cfb69a; }
 .login-story>p { font-size:11px; opacity:.6; }
 .story-content { padding:65px 0 20px; }
-.story-content h1 { font:clamp(30px,3.5vw,48px)/1.25 Georgia,serif; margin:20px 0; letter-spacing:-1px; }
+.story-content h1 { font:clamp(30px,3.5vw,48px)/1.25 "Times New Roman",Times,serif; margin:20px 0; letter-spacing:normal; }
 .story-content p { max-width:350px; opacity:.7; }
 .pottery-art { display:flex; gap:20px; align-items:end; justify-content:center; height:175px; margin:35px 0; border-bottom:1px solid #f6f0df33; }
 .vase { width:110px; height:140px; background:linear-gradient(90deg,#a86744,#d19e70,#af764d); border-radius:25% 25% 40% 40%; position:relative; }
