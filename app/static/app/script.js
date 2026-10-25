@@ -20,6 +20,8 @@ const resultCard = document.getElementById("resultCard");
 const locationName = document.getElementById("locationName");
 const distanceInfo = document.getElementById("distanceInfo");
 const languageInfo = document.getElementById("languageInfo");
+const locationReference = document.getElementById("locationReference");
+const locationSource = document.getElementById("locationSource");
 const narrationText = document.getElementById("narrationText");
 
 const audioSection = document.getElementById("audioSection");
@@ -89,6 +91,19 @@ function updateDistanceInfo(distance) {
     distanceInfo.textContent = distance == null
         ? t("Khám phá từ xa — không sử dụng GPS")
         : `${t(dataMode === "demo" ? t("Từ vị trí mẫu") : t("Từ vị trí tìm kiếm"))}: ${Math.round(distance)} m`;
+}
+
+function updateLocationReference(location) {
+    locationReference.textContent = t(location?.description_source);
+    locationSource.hidden = true;
+    locationSource.removeAttribute("href");
+    if (!location?.source_url) return;
+    try {
+        const url = new URL(location.source_url);
+        if (!["https:", "http:"].includes(url.protocol)) return;
+        locationSource.href = url.href;
+        locationSource.hidden = false;
+    } catch { /* An invalid source must not prevent reading the guide. */ }
 }
 
 
@@ -185,6 +200,7 @@ function displayNarration(data, distance) {
         t(data.location_name) || t("Địa điểm");
 
     updateDistanceInfo(distance);
+    updateLocationReference(selectedItem()?.location);
     retryNarrationButton.hidden = Boolean(data.text);
 
 
@@ -507,6 +523,7 @@ async function selectLocation(item, { force = false, reveal = true } = {}) {
     resultCard.setAttribute("aria-busy", "true");
     mapResultLink.hidden = false;
     locationName.textContent = t(location.name);
+    updateLocationReference(location);
     languageInfo.textContent = t("Đang tải {language}…", { language: languageNames[selectedLanguage] || selectedLanguage });
     updateDistanceInfo(item.distance_meters);
     narrationText.textContent = t("Đang lấy nội dung…");
@@ -821,9 +838,9 @@ document.getElementById("catalogButton").addEventListener("click", () => {
 document.getElementById("demoButton").addEventListener("click", () => {
     stopAutoGps();
     setMode("demo");
-    latitudeInput.value = "20.978400";
-    longitudeInput.value = "105.914600";
-    void loadNearby(20.9784, 105.9146);
+    latitudeInput.value = "20.974974";
+    longitudeInput.value = "105.912077";
+    void loadNearby(20.974974, 105.912077);
 });
 
 if (window.BatTrangMap) {

@@ -7,8 +7,8 @@ server để hiển thị. Người dùng vẫn cần kết nối tới server �
 
 Phạm vi: kinh độ 105.900–105.930, vĩ độ 20.965–20.995, quanh Bát Tràng.
 Thu phóng và kéo được giới hạn trong vùng dữ liệu này. Đây là bản trích xuất
-địa lý, không phải bản đồ chỉ đường. Các tọa độ điểm tham quan minh họa trong
-catalog vẫn cần được khảo sát riêng.
+địa lý, không phải bản đồ chỉ đường. Tọa độ điểm tham quan đã được đối chiếu từ
+nguồn trực tuyến, vẫn cần khảo sát lối vào tại thực địa. Xem [hồ sơ dữ liệu](bat-trang-data.md).
 
 ## Nguồn và giấy phép
 

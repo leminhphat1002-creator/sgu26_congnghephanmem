@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from scripts.export_bat_trang_map import transform_coordinates
+from scripts.seed_bat_trang import load_content
 
 
 def test_tile_projection_known_equator_and_north():
@@ -17,8 +18,9 @@ def test_shipped_background_covers_catalog_and_stays_in_bat_trang():
     assert response.status_code == 200
     data = response.json()
     west, south, east, north = data["bbox"]
-    assert west < 105.9135 < 105.9154 < east
-    assert south < 20.9777 < 20.9795 < north
+    for poi in load_content()["pois"]:
+        assert west < poi["longitude"] < east
+        assert south < poi["latitude"] < north
     assert data["metadata"]["license"] == "ODbL-1.0"
     assert len(data["metadata"]["tiles"]) == 4
     layers = {feature["properties"]["layer"] for feature in data["features"]}

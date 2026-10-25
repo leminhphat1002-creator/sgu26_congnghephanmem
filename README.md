@@ -54,13 +54,17 @@ catalog từ xa liệt kê địa điểm sẵn sàng có bài trong `poi_narrat
 **Nội dung Bát Tràng:** 5 điểm, 15 bài biên soạn bằng tiếng Việt, Anh và Nhật, có nguồn
 tham khảo cho từng điểm trong [tệp nội dung](scripts/content/bat_trang_narrations.json).
 Bài viết phục vụ đồ án, không phải nội dung chính thức của đơn vị quản lý di tích.
-Tọa độ vẫn là minh họa chưa khảo sát; hai điểm trưng bày/trải nghiệm là điểm chủ đề,
-không phải vị trí đã xác minh của bảo tàng hoặc một xưởng cụ thể.
+Catalog gồm chợ gốm, đình làng, lò bầu cổ, Bảo tàng Gốm và chùa Kim Trúc.
+Tên và vị trí đã đối chiếu từ nguồn trực tuyến; tọa độ là tham khảo, chưa khảo sát
+thực địa hoặc xác nhận lối vào. Xem [hồ sơ xác minh và tọa độ](docs/bat-trang-data.md).
 
 Để đưa bài mới vào DB cũ, chạy lại `python -m scripts.seed_bat_trang`.
 Lệnh tạo bản sao SQLite trong `data/backups/`, thêm bài còn thiếu và chỉ thay những bài
-khớp hoàn toàn với mẫu cũ (kiểm tra cả tiêu đề và nội dung). Các bài đã tự biên tập,
-tọa độ, tài khoản và phiên quản trị được giữ lại. Bản sao DB không được commit.
+khớp hoàn toàn với bản mẫu đã phát hành (kiểm tra cả tiêu đề và nội dung). Tọa độ cũ
+chỉ được nâng cấp khi cả cặp vĩ độ/kinh độ khớp đúng mẫu; chỉnh sửa riêng được giữ lại.
+Các ID địa điểm, tài khoản và phiên quản trị được giữ lại. Nếu điểm chủ đề trải nghiệm
+cũ đã được biên tập, lệnh dừng để tránh đổi nhầm nội dung đó thành chùa Kim Trúc.
+Bản sao DB không được commit.
 Sửa bài đang sử dụng tại trang quản lý; sửa tệp JSON nếu muốn đổi nội dung cho DB mới.
 Nguồn được kiểm tra ngày 25/10/2026; bản dịch cần được rà soát trước khi dùng chính thức.
 

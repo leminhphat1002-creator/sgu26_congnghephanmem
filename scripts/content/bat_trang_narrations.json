@@ -1,11 +1,15 @@
 {
   "reviewed_on": "2026-10-25",
-  "editorial_note": "Bài biên soạn cho đồ án từ nguồn tham khảo, không phải lời giới thiệu chính thức. Tọa độ cũ vẫn là minh họa; hai điểm trưng bày và trải nghiệm là điểm chủ đề, chưa xác định cơ sở cụ thể.",
+  "editorial_note": "Năm điểm có tên và nguồn tham khảo cụ thể, đối chiếu trực tuyến ngày 25/10/2026. Tọa độ là vị trí tham khảo, không phải kết quả khảo sát thực địa hoặc xác nhận lối vào. Không sử dụng tâm khung nhìn iframe thay cho tọa độ ghim.",
   "pois": [
     {
       "name": "Chợ gốm Bát Tràng",
-      "description": "Khám phá sản phẩm gốm và cách quan sát hình dáng, men, hoa văn. Tọa độ demo chưa khảo sát.",
+      "description": "Chợ gốm trong làng cổ Bát Tràng. Vị trí tham khảo từ ghim bản đồ của Cổng thông tin du lịch Gia Lâm.",
       "sources": [
+        {
+          "title": "Cổng thông tin du lịch Gia Lâm — Chợ gốm Bát Tràng",
+          "url": "https://visitgialam.com/vi/place/details/cho-gom-bat-trang-12"
+        },
         {
           "title": "CSDL du lịch Việt Nam — Làng gốm Bát Tràng",
           "url": "https://csdl.vietnamtourism.gov.vn/dest/?item=198"
@@ -29,17 +33,49 @@
           "content": "バッチャン陶器市場の物語へようこそ。陶器専門の市場は、村の製品を展示し、売買する場所として2004年10月に開かれました。バッチャンでは、日用品、祭祀用の器、装飾品などが作られています。形の似た二つの器を選び、釉薬の色や絵付けを見比べてみましょう。どの細部に心がひかれますか。その気づきをきっかけに、作り手についてお店の人に尋ねてみてください。購入前には用途、手入れ、梱包方法を確認しましょう。食器の場合は、その製品の安全性に関する情報や使用方法も確認してください。"
         }
       },
-      "latitude": 20.9784,
-      "longitude": 105.9146,
+      "latitude": 20.974974,
+      "longitude": 105.912077,
       "legacy": {
-        "vi": "4e90227eaa382722d7b8bf0b4ed9e0083d12dbb80152b21cafc18e304070d4a5",
-        "en": "d991e051165fbfbf731f2dd7cef905e142b6d4529044c68e92623acffc5f774e",
-        "ja": "cb1758ccd7135c1d1c52d1897e3c9e0c71376687b690c9e09d79caf951469935"
+        "vi": [
+          "4e90227eaa382722d7b8bf0b4ed9e0083d12dbb80152b21cafc18e304070d4a5",
+          "bcc040af400e056b3d1c71f3f87d432ce87590b91492d50b730484d86d801ddb"
+        ],
+        "en": [
+          "d991e051165fbfbf731f2dd7cef905e142b6d4529044c68e92623acffc5f774e",
+          "4a8c57a0df8f8f3f270127fccba096d7e6a8652b029ed30d6543ff0924f7b19e"
+        ],
+        "ja": [
+          "cb1758ccd7135c1d1c52d1897e3c9e0c71376687b690c9e09d79caf951469935",
+          "d01b2718495239a0759534533d617b4f042b4204c3ae53f81fbb8eac83f52ce9"
+        ]
+      },
+      "previous_locations": [
+        {
+          "name": "Chợ gốm Bát Tràng",
+          "description": "Khám phá sản phẩm gốm và cách quan sát hình dáng, men, hoa văn. Tọa độ demo chưa khảo sát.",
+          "latitude": 20.9784,
+          "longitude": 105.9146,
+          "source_urls": [
+            "https://csdl.vietnamtourism.gov.vn/dest/?item=198",
+            "https://vietnam.travel/jp/node/995"
+          ]
+        }
+      ],
+      "key": "bat-trang-market",
+      "coordinate_reference": {
+        "status": "online_reference",
+        "reviewed_on": "2026-10-25",
+        "source_url": "https://visitgialam.com/vi/place/details/cho-gom-bat-trang-12",
+        "field_surveyed": false,
+        "method": "published_leaflet_marker",
+        "evidence": "CreateMapMarkerByLeaflet: Chợ gốm Bát Tràng",
+        "published_latitude": 20.9749741392671,
+        "published_longitude": 105.912077351636
       }
     },
     {
       "name": "Đình làng Bát Tràng",
-      "description": "Tìm hiểu đình làng và nghi thức rước nước sông Hồng trong hội làng. Tọa độ demo chưa khảo sát.",
+      "description": "Đình làng bên sông Hồng. Vị trí tham khảo theo ảnh có tọa độ chụp tại đình; chưa xác minh lối vào.",
       "sources": [
         {
           "title": "Báo ảnh Việt Nam / TTXVN — Nghi thức rước nước trong Lễ hội làng Bát Tràng",
@@ -60,18 +96,53 @@
           "content": "バッチャン村の共同亭は紅河のほとりにあり、村の信仰や祭りと結びついています。祭りの水くみの行列では、人々が船で川へ出て、陶器のかめに水をくみ、共同亭へ運んで祭祀に用います。川と焼き物が一つの伝統の中で出会うのです。水辺から庭へ続く道のりを、静かに思い描いてみましょう。祭りの際は係員の案内に従い、行列の通り道を空けてください。見学中は声を落とし、服装に配慮し、撮影前に許可を確認しましょう。陶器のお土産に加えて、この村の人々について、どんな思い出を持ち帰りたいですか。"
         }
       },
-      "latitude": 20.9777,
-      "longitude": 105.9138,
+      "latitude": 20.976401,
+      "longitude": 105.909711,
       "legacy": {
-        "vi": "d324c8fd439896839a0a928d5ea1cdd2543009b10f00b5b32982d0fa24faff7c",
-        "en": "1e0bc9dd114110ab714b6e0699b791c4f87ed6ebc73d04449bed87ccd5c04892",
-        "ja": "1714dfffc129a1e02045c7ca1b962591b7a5751e62eb7a32f44235a7cf612f90"
+        "vi": [
+          "d324c8fd439896839a0a928d5ea1cdd2543009b10f00b5b32982d0fa24faff7c",
+          "3acb625ab721a9a3986d96284fe57edf92d3b566b53fd2b4234fe6b0586560a0"
+        ],
+        "en": [
+          "1e0bc9dd114110ab714b6e0699b791c4f87ed6ebc73d04449bed87ccd5c04892",
+          "adbcc896ce33d3d1b980286ff5d27734f34dd8b56e4fe417de0d15fc65ad3ed6"
+        ],
+        "ja": [
+          "1714dfffc129a1e02045c7ca1b962591b7a5751e62eb7a32f44235a7cf612f90",
+          "234978adb930be0af088cd3438127ac67a1154ec5c04d317c9a7ca33199ae0a8"
+        ]
+      },
+      "previous_locations": [
+        {
+          "name": "Đình làng Bát Tràng",
+          "description": "Tìm hiểu đình làng và nghi thức rước nước sông Hồng trong hội làng. Tọa độ demo chưa khảo sát.",
+          "latitude": 20.9777,
+          "longitude": 105.9138,
+          "source_urls": [
+            "https://vietnam.vnanet.vn/vietnamese/long-form/doc-dao-nghi-thuc-ruoc-nuoc-trong-le-hoi-lang-bat-trang-395142.html"
+          ]
+        }
+      ],
+      "key": "bat-trang-communal-house",
+      "coordinate_reference": {
+        "status": "online_reference",
+        "reviewed_on": "2026-10-25",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Bat_Trang_communal_house_(2018)_01.jpg",
+        "field_surveyed": false,
+        "method": "photo_camera_location",
+        "evidence": "Camera location: 20.976401; 105.909711. Donald Trung, own work, 01/03/2018. This is a camera position, not a surveyed entrance.",
+        "attribution": "Donald Trung / Wikimedia Commons",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
       }
     },
     {
       "name": "Lò bầu cổ Bát Tràng",
-      "description": "Câu chuyện nung gốm, lò truyền thống và sự thay đổi công nghệ. Tọa độ demo chưa khảo sát.",
+      "description": "Lò bầu cổ tại thôn 3, Bát Tràng. Vị trí tham khảo từ ghim bản đồ của Cổng thông tin du lịch Gia Lâm.",
       "sources": [
+        {
+          "title": "Cổng thông tin du lịch Gia Lâm — Lò Bầu cổ",
+          "url": "https://visitgialam.com/vi/place/details/lo-bau-co-15"
+        },
         {
           "title": "Du lịch nông thôn / Cục Du lịch Quốc gia — Bát Tràng từ làng nghề khói bụi tới làng nghề xanh",
           "url": "https://nongthon.vietnamtourism.gov.vn/bat-trang-ha-noi-tu-lang-nghe-khoi-bui-toi-lang-nghe-xanh/"
@@ -95,18 +166,54 @@
           "content": "この伝統窯の立ち寄り地点では、焼成という工程に注目します。バッチャンでは、かつて薪や石炭を使う窯が利用され、その後、多くの工房がガス窯や電気窯を取り入れました。古い窯は、村の仕事の歴史を知る見学先にもなっています。見学可能な場所から構造を眺め、職人の作業を想像してみましょう。器をどう並べ、火をどう管理したのでしょうか。案内人がいれば、昔の使用の跡について尋ねてみてください。立入禁止の場所には入らず、設備には触れないでください。次へ進む前に、土が器になる道のりを、自分の言葉三つで表してみましょう。"
         }
       },
-      "latitude": 20.9788,
-      "longitude": 105.9135,
+      "latitude": 20.976499,
+      "longitude": 105.911759,
       "legacy": {
-        "vi": "3c45afd2bfd616ab751d49c061b6a772f47197a6ccb443417cc9ab6ccbaaab68",
-        "en": "3c61470a5b326207a884d1eb2e2e6a7ccef33238d55917831afb927ab0f40c3b",
-        "ja": "98ec53c2c3890b9c858d54e786030297d38b7d360e544b258122b93436c11e48"
+        "vi": [
+          "3c45afd2bfd616ab751d49c061b6a772f47197a6ccb443417cc9ab6ccbaaab68",
+          "de08cc8bc8e30a86c6161234e962d8fd4c3d9f1507eb33b15f568556fdddad37"
+        ],
+        "en": [
+          "3c61470a5b326207a884d1eb2e2e6a7ccef33238d55917831afb927ab0f40c3b",
+          "16489d433956b597b3da76791585262cc66937e9d9732f18cb6ba9ea01860421"
+        ],
+        "ja": [
+          "98ec53c2c3890b9c858d54e786030297d38b7d360e544b258122b93436c11e48",
+          "4afd59852a436e55ae36ae44c39d202b4f3f549e465ec26464530a9f1330ff7c"
+        ]
+      },
+      "previous_locations": [
+        {
+          "name": "Lò bầu cổ Bát Tràng",
+          "description": "Câu chuyện nung gốm, lò truyền thống và sự thay đổi công nghệ. Tọa độ demo chưa khảo sát.",
+          "latitude": 20.9788,
+          "longitude": 105.9135,
+          "source_urls": [
+            "https://nongthon.vietnamtourism.gov.vn/bat-trang-ha-noi-tu-lang-nghe-khoi-bui-toi-lang-nghe-xanh/",
+            "https://vietnam.vnanet.vn/vietnamese/long-form/bat-trang-phat-trien-nghe-gom-gan-voi-trai-nghiem-van-hoa-va-du-lich-467785.html"
+          ]
+        }
+      ],
+      "key": "bat-trang-kiln",
+      "coordinate_reference": {
+        "status": "online_reference",
+        "reviewed_on": "2026-10-25",
+        "source_url": "https://visitgialam.com/vi/place/details/lo-bau-co-15",
+        "field_surveyed": false,
+        "method": "published_leaflet_marker",
+        "evidence": "CreateMapMarkerByLeaflet: Lò Bầu cổ",
+        "published_latitude": 20.9764988423084,
+        "published_longitude": 105.91175936906
       }
     },
     {
-      "name": "Không gian trưng bày gốm Bát Tràng",
-      "description": "Điểm chủ đề về trưng bày và quan sát gốm; không phải vị trí đã xác minh của Bảo tàng Gốm Bát Tràng.",
+      "name": "Bảo tàng Gốm Bát Tràng",
+      "description": "Bảo tàng Gốm tại số 28 đường Làng cổ Bát Tràng. Vị trí bản đồ mở đã đối chiếu với bản đồ của bảo tàng.",
       "sources": [
+        {
+          "title": "Bảo tàng Gốm Bát Tràng — Liên hệ và vị trí",
+          "url": "https://www.ceramuseum.com/lien-he.html"
+        },
         {
           "title": "Bảo tàng Gốm Bát Tràng — Trưng bày thường xuyên",
           "url": "https://www.ceramuseum.com/trung-bay/trung-bay-thuong-xuyen.html"
@@ -114,60 +221,131 @@
       ],
       "narrations": {
         "vi": {
-          "title": "Không gian trưng bày gốm Bát Tràng",
-          "content": "Điểm chủ đề này mời bạn nhìn đồ gốm như một câu chuyện về nghề. Một địa chỉ tham khảo thực tế là Bảo tàng Gốm Bát Tràng, nơi giới thiệu sự hình thành làng nghề, quy trình sản xuất và tác phẩm của nghệ nhân. Trưng bày còn có mẫu thử xương gốm, men và những sản phẩm lỗi, giúp người xem chú ý tới quá trình thử nghiệm. Khi đứng trước một hiện vật, hãy quan sát từ dáng tổng thể đến nét trang trí nhỏ nhất. Bạn thích sự cân đối hay một chi tiết bất ngờ? Hãy thử đặt một tên gọi riêng cho món đồ rồi đọc phần giới thiệu để so sánh cảm nhận. Không cầm hiện vật khi chưa được phép. Lưu ý, điểm trên bản đồ demo là điểm chủ đề, chưa phải vị trí đã xác minh của bảo tàng."
+          "title": "Bảo tàng Gốm Bát Tràng",
+          "content": "Bảo tàng Gốm Bát Tràng nằm trong Trung tâm Tinh hoa Làng nghề Việt tại số 28 đường Làng cổ Bát Tràng, bên sông Bắc Hưng Hải. Không gian trưng bày giới thiệu lịch sử làng nghề, quy trình sản xuất và tác phẩm của nghệ nhân. Các mẫu xương gốm, men thử và sản phẩm lỗi giúp bạn nhìn thấy cả quá trình tìm tòi phía sau một món đồ hoàn thiện. Hãy chọn một hiện vật, quan sát hình dáng rồi tìm một chi tiết trang trí khiến bạn chú ý. Bạn có thể đọc nhãn trưng bày để đối chiếu cảm nhận của mình. Không chạm hoặc cầm hiện vật khi chưa được phép. Trước khi đến, hãy kiểm tra lịch mở cửa và dịch vụ đang tổ chức trên kênh của bảo tàng. Tọa độ trong ứng dụng là vị trí tham khảo trực tuyến, chưa xác nhận lối vào."
         },
         "en": {
-          "title": "Bat Trang Ceramics Display",
-          "content": "This thematic stop invites you to read ceramics as a story of craft. One real place to explore is Bat Trang Ceramics Museum, whose permanent displays cover village history, production and artisans' work. Test bodies, glaze samples and unsuccessful pieces also draw attention to experimentation. When viewing an object, move your attention from its overall form to a small decorative detail. Do you prefer balance or a surprising feature? Invent a title for the piece, then read its label and compare your impressions. Handle exhibits only with permission. This demo marker represents a theme; it is not a verified museum location."
+          "title": "Bat Trang Ceramics Museum",
+          "content": "Bat Trang Ceramics Museum is part of the Vietnamese Craft Village Quintessence Centre at 28 Lang Co Bat Trang Road, beside the Bac Hung Hai River. Its displays introduce village history, ceramic production and artisans’ work. Test bodies, glaze samples and unsuccessful pieces reveal the experiments behind finished objects. Choose one exhibit and look from its overall shape to a detail that catches your eye. Read the label and compare your impressions. Do not touch exhibits without permission. Check the museum’s own information for opening times and available activities before visiting. The app’s map point is an online reference, not a surveyed entrance."
         },
         "ja": {
-          "title": "バッチャン陶器の展示空間",
-          "content": "このテーマ地点では、陶器を職人の物語として眺めてみましょう。実際の見学先の一つであるバッチャン陶器博物館では、村の歴史、製造工程、職人の作品が紹介されています。素地や釉薬の試料、失敗した作品も、試行錯誤に目を向けるきっかけになります。作品全体の形から、小さな装飾へと視線を移してください。均整の美と意外な細部のどちらにひかれますか。自分で作品名を考えてから説明を読み、印象を比べてみましょう。許可なく展示品に触れないでください。このデモの印はテーマを示しており、博物館の位置を確認したものではありません。"
+          "title": "バッチャン陶器博物館",
+          "content": "バッチャン陶器博物館は、バックフンハイ川沿い、ランコーバッチャン通り28番の伝統工芸センター内にあります。展示では村の歴史、陶器の製造工程、職人の作品を紹介しています。素地や釉薬の試料、失敗した作品からは、完成品の背景にある試行錯誤も感じられます。一つの作品を選び、全体の形から気になる細部へと目を向けてください。説明を読み、自分の印象と比べてみましょう。許可なく展示品に触れないでください。訪問前に博物館の案内で開館時間や実施中の体験をご確認ください。アプリの座標はオンライン資料による参考位置で、入口を現地調査したものではありません。"
         }
       },
-      "latitude": 20.9795,
-      "longitude": 105.9154,
+      "latitude": 20.973081,
+      "longitude": 105.916266,
       "legacy": {
-        "vi": "9062126e644d668443a76b32161c19ca15ce3a038aab8cb003697e063b827fdd",
-        "en": "1162ee4d76c687f86de3a882393d0a42b695b0813236d81e66742fa3f03d2286",
-        "ja": "9e40cebbecc90be6f75235550a1ffcf9c446f30ddede1c1bc930ecdfb6fe99b5"
+        "vi": [
+          "9062126e644d668443a76b32161c19ca15ce3a038aab8cb003697e063b827fdd",
+          "fa7380075e36d898c6c90b1e60755eabcdb0c03e92f6b14f1462887635da6f25"
+        ],
+        "en": [
+          "1162ee4d76c687f86de3a882393d0a42b695b0813236d81e66742fa3f03d2286",
+          "6fb9a1d1c59c2cfec8afc1a4e0d82936f5d962b99bb3d635089cbfc82cffb888"
+        ],
+        "ja": [
+          "9e40cebbecc90be6f75235550a1ffcf9c446f30ddede1c1bc930ecdfb6fe99b5",
+          "028702cc65712788238427c3f4de03a51cff69e649eddb795d58ff4699c8403b"
+        ]
+      },
+      "previous_locations": [
+        {
+          "name": "Không gian trưng bày gốm Bát Tràng",
+          "description": "Điểm chủ đề về trưng bày và quan sát gốm; không phải vị trí đã xác minh của Bảo tàng Gốm Bát Tràng.",
+          "latitude": 20.9795,
+          "longitude": 105.9154,
+          "source_urls": [
+            "https://www.ceramuseum.com/trung-bay/trung-bay-thuong-xuyen.html"
+          ]
+        }
+      ],
+      "key": "bat-trang-museum",
+      "coordinate_reference": {
+        "status": "online_reference",
+        "reviewed_on": "2026-10-25",
+        "source_url": "https://tiles.openfreemap.org/planet/20261018_080001_pt/14/13012/7215.pbf",
+        "field_surveyed": false,
+        "method": "openmaptiles_poi",
+        "evidence": "POI layer: Trung tâm Tinh hoa làng nghề Việt, vector feature 98468982171; decoded WGS84 20.9730810, 105.9162658. Official museum map is centered nearby (20.972973, 105.916164); its viewport is corroboration only, not the selected coordinate.",
+        "attribution": "OpenFreeMap / © OpenMapTiles / © OpenStreetMap contributors",
+        "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+        "corroboration_url": "https://www.ceramuseum.com/lien-he.html",
+        "rejected_source": {
+          "url": "https://visitgialam.com/vi/place/details/trung-tam-tinh-hoa-lang-nghe-viet-47",
+          "latitude": 21.0224596,
+          "longitude": 105.8795005,
+          "reason": "Published marker is outside Bat Trang and contradicts the museum map; do not use it."
+        }
       }
     },
     {
-      "name": "Không gian trải nghiệm làm gốm",
-      "description": "Điểm chủ đề về tạo hình và trang trí gốm; chưa gắn với một cơ sở trải nghiệm cụ thể.",
+      "name": "Chùa Kim Trúc (Bát Tràng)",
+      "description": "Chùa Kim Trúc tại Bát Tràng. Vị trí tham khảo từ ghim bản đồ của Cổng thông tin du lịch Gia Lâm.",
       "sources": [
         {
-          "title": "Báo ảnh Việt Nam / TTXVN — Nghề gốm gắn với trải nghiệm văn hóa và du lịch",
-          "url": "https://vietnam.vnanet.vn/vietnamese/long-form/bat-trang-phat-trien-nghe-gom-gan-voi-trai-nghiem-van-hoa-va-du-lich-467785.html"
+          "title": "Cổng thông tin du lịch Gia Lâm — Chùa Kim Trúc",
+          "url": "https://visitgialam.com/vi/place/details/chua-kim-truc-10"
         },
         {
-          "title": "Bảo tàng Gốm Bát Tràng — Trải nghiệm",
-          "url": "https://www.ceramuseum.com/dich-vu/trai-nghiem.html"
+          "title": "UBND xã Bát Tràng — Chùa Bát Tràng",
+          "url": "https://battrang.hanoi.gov.vn/di-tich-lich-su-va-van-hoa/chua-bat-trang-2757250704153629561.htm"
         }
       ],
       "narrations": {
         "vi": {
-          "title": "Không gian trải nghiệm làm gốm",
-          "content": "Ở điểm chủ đề trải nghiệm, mời bạn hình dung mình thử làm một người thợ gốm. Tại Bát Tràng, du khách có thể tham gia tạo hình hoặc trang trí sản phẩm dưới sự hướng dẫn của cơ sở tổ chức. Bảo tàng Gốm Bát Tràng còn giới thiệu hoạt động ghép tranh từ những mảnh gốm. Nếu chọn nặn đất, bạn muốn làm chiếc cốc, chiếc bát hay một hình dáng riêng? Hãy bắt đầu bằng một ý tưởng nhỏ, lắng nghe người hướng dẫn và cảm nhận từng thao tác của đôi tay. Trước khi đăng ký, hỏi rõ hoạt động bao gồm những gì, chi phí, thời gian nung và cách nhận sản phẩm. Điểm đánh dấu này là chủ đề trong tuyến demo, chưa đại diện cho một xưởng cụ thể. Một vật tự làm có thể chưa tròn đều, nhưng sẽ gợi nhớ lần bạn thử sức với đất."
+          "title": "Chùa Kim Trúc (Bát Tràng)",
+          "content": "Chùa Kim Trúc, còn gọi là chùa Bát Tràng, là một điểm tìm hiểu đời sống tín ngưỡng của làng gốm. Cổng thông tin du lịch Gia Lâm giới thiệu ngôi chùa với các công trình, cột đá và hiện vật lưu giữ dấu ấn văn hóa địa phương. Khi đến đây, hãy chậm lại để quan sát cách vật liệu và trang trí cùng tạo nên không gian thanh tĩnh. Bạn thấy chi tiết nào gợi liên tưởng đến nghề thủ công của làng? Giữ giọng nói nhỏ, ăn mặc phù hợp, hỏi trước khi chụp ảnh và không chạm vào tượng hoặc đồ thờ. Tôn trọng các khu vực dành cho người hành lễ. Vị trí trên bản đồ được đối chiếu từ ghim của cổng du lịch, chưa phải kết quả khảo sát lối vào."
         },
         "en": {
-          "title": "Pottery Making Experience",
-          "content": "At this thematic stop, imagine trying a potter's work. Visitors to Bat Trang can join shaping or decorating activities offered by local operators. The ceramics museum also presents mosaic activities using ceramic fragments. If you choose clay, would you make a cup, a bowl or a shape of your own? Start with a small idea, listen to your instructor and notice each movement of your hands. Before booking, ask what is included, the price, firing time and how to collect the finished piece. This demo marker does not identify a specific workshop. Your handmade object may be uneven, yet it can hold a very personal memory."
+          "title": "Kim Truc Pagoda, Bat Trang",
+          "content": "Kim Truc Pagoda, also known as Bat Trang Pagoda, offers a look at the pottery village’s religious life. Gia Lam’s tourism portal describes its buildings, stone columns and objects reflecting local culture. Slow down and notice how materials and decoration create a quiet setting. Which detail reminds you of the village’s craft traditions? Speak softly, dress respectfully and ask before taking photographs. Do not touch statues or ritual objects, and leave space for worshippers. This map point comes from the tourism portal’s published marker; the entrance has not been surveyed on site."
         },
         "ja": {
-          "title": "陶芸体験スペース",
-          "content": "このテーマ地点では、陶芸に挑戦する自分を想像してみましょう。バッチャンでは、運営する施設の指導のもと、成形や装飾を体験できます。陶器博物館では、陶片を使うモザイク制作も紹介されています。粘土を選ぶなら、カップ、茶碗、それとも自分だけの形を作りますか。小さなアイデアから始め、担当者の説明を聞き、手の動きを感じてみましょう。申し込む前に、体験の内容、料金、焼成にかかる時間、作品の受け取り方法を確認してください。このデモの印は特定の工房を示していません。形が少し不ぞろいでも、自分で作った器は、土と向き合った時間を思い出させてくれるでしょう。"
+          "title": "バッチャンの金竹寺",
+          "content": "金竹寺はバッチャン寺とも呼ばれ、陶芸村の信仰に触れられる場所です。ザーラムの観光案内では、建物、石柱、地域の文化を伝える品々が紹介されています。歩みを緩め、素材や装飾が静かな空間をつくる様子を眺めてください。村の手仕事を連想させる細部は見つかるでしょうか。小さな声で話し、服装に配慮し、撮影前に許可を確認してください。仏像や祭具に触れず、参拝者のための場所を空けましょう。地図の位置は観光案内サイトが公開するマーカーに基づく参考値です。入口を現地調査したものではありません。"
         }
       },
-      "latitude": 20.9779,
-      "longitude": 105.9152,
+      "latitude": 20.974306,
+      "longitude": 105.910936,
       "legacy": {
-        "vi": "4576118680a1fd46d809bb083076913c85efe687ee4f3efc0f09b3f9477b9c2b",
-        "en": "5a74d1dcf6f3862c007e2e925f6e71c77a1e152ff492f7b267b1e8e5046788d4",
-        "ja": "15af03312a15f498ac4ce9f16d53ba42d182c26e93bc70ccd4d73d002d42d843"
-      }
+        "vi": [
+          "4576118680a1fd46d809bb083076913c85efe687ee4f3efc0f09b3f9477b9c2b",
+          "cf8a91c603a2f780a8aeda94d6092b8ad8226b496dbb3e4dd6f32ba9854280e3"
+        ],
+        "en": [
+          "5a74d1dcf6f3862c007e2e925f6e71c77a1e152ff492f7b267b1e8e5046788d4",
+          "62abe84031095ddd6bc4c843bf0c369742eb9ccdddec88ee831d9857f96bf205"
+        ],
+        "ja": [
+          "15af03312a15f498ac4ce9f16d53ba42d182c26e93bc70ccd4d73d002d42d843",
+          "1af61a48c4e885f32314b8dc5517a912af763e1df7f6f33286e0314e630f8eb4"
+        ]
+      },
+      "previous_locations": [
+        {
+          "name": "Không gian trải nghiệm làm gốm",
+          "description": "Điểm chủ đề về tạo hình và trang trí gốm; chưa gắn với một cơ sở trải nghiệm cụ thể.",
+          "latitude": 20.9779,
+          "longitude": 105.9152,
+          "source_urls": [
+            "https://vietnam.vnanet.vn/vietnamese/long-form/bat-trang-phat-trien-nghe-gom-gan-voi-trai-nghiem-van-hoa-va-du-lich-467785.html",
+            "https://www.ceramuseum.com/dich-vu/trai-nghiem.html"
+          ]
+        }
+      ],
+      "key": "bat-trang-kim-truc",
+      "coordinate_reference": {
+        "status": "online_reference",
+        "reviewed_on": "2026-10-25",
+        "source_url": "https://visitgialam.com/vi/place/details/chua-kim-truc-10",
+        "field_surveyed": false,
+        "method": "published_leaflet_marker",
+        "evidence": "CreateMapMarkerByLeaflet: Chùa Kim Trúc",
+        "published_latitude": 20.9743057,
+        "published_longitude": 105.9109363
+      },
+      "replaces_theme": true
     }
   ]
 }

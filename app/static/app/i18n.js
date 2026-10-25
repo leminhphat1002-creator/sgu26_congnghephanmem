@@ -151,7 +151,17 @@ window.BatTrangI18n = (() => {
         "Điện thoại và máy chủ cần cùng mạng Wi-Fi. Giữ máy chủ đang chạy.": ["Your phone and server must be on the same Wi-Fi network. Keep the server running.", "スマートフォンとサーバーを同じWi-Fiに接続し、サーバーを起動したままにしてください。"],
         "Khách có thể quét mã để mở trang khám phá.": ["Visitors can scan the code to open the visitor page.", "コードを読み取ると探索ページを開けます。"],
         "Đã sao chép liên kết.": ["Link copied.", "リンクをコピーしました。"],
-        "Hãy sao chép địa chỉ hiển thị phía trên.": ["Please copy the address shown above.", "上に表示されたアドレスをコピーしてください。"]
+        "Hãy sao chép địa chỉ hiển thị phía trên.": ["Please copy the address shown above.", "上に表示されたアドレスをコピーしてください。"],
+        "Nội dung và vị trí đã đối chiếu từ nguồn trực tuyến. Tọa độ chỉ để tham khảo, chưa khảo sát thực địa hoặc xác nhận lối vào.": ["Content and locations have been checked against online sources. Coordinates are references only; entrances have not been surveyed on site.", "内容と位置はオンライン資料と照合しています。座標は参考値です。入口の現地調査は行っていません。"],
+        "Vị trí tham khảo trực tuyến, chưa khảo sát thực địa. Hãy đối chiếu biển chỉ dẫn tại điểm đến.": ["These are online reference positions, not field-surveyed locations. Check signs at the destination.", "位置はオンライン資料による参考値です。現地調査済みではありません。訪問先の案内表示をご確認ください。"],
+        "Nguồn tham khảo ↗": ["Reference source ↗", "参考資料 ↗"],
+        "Chợ gốm trong làng cổ Bát Tràng. Vị trí tham khảo từ ghim bản đồ của Cổng thông tin du lịch Gia Lâm.": ["Pottery market in Bát Tràng’s old village. Reference position from Gia Lam Tourism Portal’s published map marker.", "バッチャン旧村の陶器市場。位置はザーラム観光案内の公開マーカーによる参考値です。"],
+        "Đình làng bên sông Hồng. Vị trí tham khảo theo ảnh có tọa độ chụp tại đình; chưa xác minh lối vào.": ["Communal house beside the Red River. Reference position from a geotagged photograph taken at the site; the entrance is unverified.", "紅河沿いの集会所。位置は現地で撮影された位置情報付き写真を参考にしています。入口は未確認です。"],
+        "Lò bầu cổ tại thôn 3, Bát Tràng. Vị trí tham khảo từ ghim bản đồ của Cổng thông tin du lịch Gia Lâm.": ["Traditional kiln in Hamlet 3, Bát Tràng. Reference position from Gia Lam Tourism Portal’s published map marker.", "バッチャン第3集落の伝統的な窯。位置はザーラム観光案内の公開マーカーによる参考値です。"],
+        "Bảo tàng Gốm tại số 28 đường Làng cổ Bát Tràng. Vị trí bản đồ mở đã đối chiếu với bản đồ của bảo tàng.": ["Ceramics Museum at 28 Lang Co Bat Trang Road. Open map position cross-checked with the museum’s own map.", "ランコーバッチャン通り28番の陶器博物館。公開地図の位置を博物館の地図と照合しています。"],
+        "Chùa Kim Trúc tại Bát Tràng. Vị trí tham khảo từ ghim bản đồ của Cổng thông tin du lịch Gia Lâm.": ["Kim Truc Pagoda in Bát Tràng. Reference position from Gia Lam Tourism Portal’s published map marker.", "バッチャンの金竹寺。位置はザーラム観光案内の公開マーカーによる参考値です。"],
+        "Bảo tàng Gốm Bát Tràng": ["Bát Tràng Ceramics Museum", "バッチャン陶器博物館"],
+        "Chùa Kim Trúc (Bát Tràng)": ["Kim Truc Pagoda (Bát Tràng)", "金竹寺（バッチャン）"]
     };
     const supported = ["vi", "en", "ja"];
     const storageKey = "bat-trang-visitor-language-v1";

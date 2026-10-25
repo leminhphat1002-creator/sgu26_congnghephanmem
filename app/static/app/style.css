@@ -455,6 +455,7 @@ footer {
 .map-footer { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
 .map-footer p { margin: 0; flex: 1 1 240px; color: #475569; line-height: 1.6; font-size: 14px; }
 .map-footer a, .back-to-map { color: #7b3b23; font-size: 14px; font-weight: 700; }
+.place-source { display: inline-block; color: #7b3b23; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
 .map-footer .error { color: #b91c1c; }
 .map-footer .warning { color: #92400e; }
 .map-footer .success { color: #166534; }

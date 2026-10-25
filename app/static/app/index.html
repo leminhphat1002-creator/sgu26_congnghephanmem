@@ -9,11 +9,11 @@
     <title>Bát Tràng Audio Guide</title>
 
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
-    <link rel="stylesheet" href="/static/app/style.css?v=20261025-i18n1">
+    <link rel="stylesheet" href="/static/app/style.css?v=20261026-catalog1">
     <script src="/static/vendor/leaflet/leaflet.js" defer></script>
-    <script src="/static/app/i18n.js?v=20261025-i18n1" defer></script>
-    <script src="/static/app/map.js?v=20261025-i18n1" defer></script>
-    <script src="/static/app/script.js?v=20261025-i18n1" defer></script>
+    <script src="/static/app/i18n.js?v=20261026-catalog1" defer></script>
+    <script src="/static/app/map.js?v=20261026-catalog1" defer></script>
+    <script src="/static/app/script.js?v=20261026-catalog1" defer></script>
 </head>
 
 <body>
@@ -63,7 +63,7 @@
                 <button id="catalogButton" type="button" class="primary-button" data-i18n="Khám phá từ xa">Khám phá từ xa</button>
                 <button id="demoButton" type="button" class="secondary-button" data-i18n="Trải nghiệm vị trí mẫu tại Bát Tràng">Trải nghiệm vị trí mẫu tại Bát Tràng</button>
                 <p id="modeStatus" role="status" data-i18n="Khám phá từ xa — không sử dụng GPS.">Khám phá từ xa — không sử dụng GPS.</p>
-                <p class="description" data-i18n="Bài thuyết minh đã được biên soạn từ nguồn tham khảo. Tọa độ vẫn là minh họa; cần xác minh trước khi tham quan thực tế.">Bài thuyết minh đã được biên soạn từ nguồn tham khảo. Tọa độ vẫn là minh họa; cần xác minh trước khi tham quan thực tế.</p>
+                <p class="description" data-i18n="Nội dung và vị trí đã đối chiếu từ nguồn trực tuyến. Tọa độ chỉ để tham khảo, chưa khảo sát thực địa hoặc xác nhận lối vào.">Nội dung và vị trí đã đối chiếu từ nguồn trực tuyến. Tọa độ chỉ để tham khảo, chưa khảo sát thực địa hoặc xác nhận lối vào.</p>
                 <h3 data-i18n="Vị trí tìm kiếm">Vị trí tìm kiếm</h3>
 
                 <div class="form-grid">
@@ -75,7 +75,7 @@
                             step="any"
                             min="-90"
                             max="90"
-                            value="20.978400"
+                            value="20.974974"
                         >
                     </div>
 
@@ -87,7 +87,7 @@
                             step="any"
                             min="-180"
                             max="180"
-                            value="105.914600"
+                            value="105.912077"
                         >
                     </div>
                 </div>
@@ -183,7 +183,7 @@
                 <p id="mapStatus" role="status" aria-live="polite" data-i18n="Đang tải bản đồ và các điểm tham quan…">Đang tải bản đồ và các điểm tham quan…</p>
                 <a id="mapResultLink" href="#resultCard" hidden data-i18n="Đọc và nghe thuyết minh ↓">Đọc và nghe thuyết minh ↓</a>
             </div>
-            <p class="map-disclaimer" data-i18n="Tọa độ và địa điểm trong đồ án là dữ liệu minh họa, cần xác minh trước khi tham quan thực tế.">Tọa độ và địa điểm trong đồ án là dữ liệu minh họa, cần xác minh trước khi tham quan thực tế.</p>
+            <p class="map-disclaimer" data-i18n="Vị trí tham khảo trực tuyến, chưa khảo sát thực địa. Hãy đối chiếu biển chỉ dẫn tại điểm đến.">Vị trí tham khảo trực tuyến, chưa khảo sát thực địa. Hãy đối chiếu biển chỉ dẫn tại điểm đến.</p>
             <p class="map-disclaimer"><span data-i18n="Nền bản đồ Bát Tràng được lưu cùng ứng dụng; có thể kéo và phóng to trong khu vực này mà không cần tải ảnh nền từ Internet.">Nền bản đồ Bát Tràng được lưu cùng ứng dụng; có thể kéo và phóng to trong khu vực này mà không cần tải ảnh nền từ Internet.</span> <a href="/static/app/bat-trang-basemap.geojson" download data-i18n="Dữ liệu bản đồ (ODbL)">Dữ liệu bản đồ (ODbL)</a>.</p>
         </section>
 
@@ -197,6 +197,8 @@
                 <span id="distanceInfo"></span>
                 <span id="languageInfo"></span>
             </div>
+            <p id="locationReference" class="description"></p>
+            <a id="locationSource" class="place-source" target="_blank" rel="noopener noreferrer" data-i18n="Nguồn tham khảo ↗" hidden>Nguồn tham khảo ↗</a>
             <h3 data-i18n="Nội dung thuyết minh">Nội dung thuyết minh</h3>
             <p id="narrationText"></p>
             <button id="retryNarrationButton" class="secondary-button retry-narration" type="button" hidden data-i18n="Thử tải lại thuyết minh">Thử tải lại thuyết minh</button>

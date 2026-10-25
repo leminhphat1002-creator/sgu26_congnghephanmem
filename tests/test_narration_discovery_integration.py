@@ -69,7 +69,8 @@ def test_remote_catalog_and_selected_narration(environment):
 def test_real_gps_far_away_and_demo_nearby(environment):
     client, _, audio = environment
     assert client.get("/narration/nearby?latitude=0&longitude=0").json() == []
-    response = client.get("/narration/nearby?latitude=20.9784&longitude=105.9146")
+    # The sample position is the sourced market location, not the old demo cluster.
+    response = client.get("/narration/nearby?latitude=20.974974&longitude=105.912077")
     assert len(response.json()) == 5
     audio.synthesize.assert_not_awaited()
     assert client.get("/narration/nearby?latitude=100&longitude=0").status_code == 422

@@ -25,7 +25,7 @@ window.BatTrangMap = class BatTrangMap {
 
         this.map = L.map("locationMap", { scrollWheelZoom: false, maxZoom: 19,
             zoomControl: false, closePopupOnClick: true })
-            .setView([20.9784, 105.9146], 16);
+            .setView([20.974974, 105.912077], 16);
         this.map.on("popupopen", () => {
             const close = this.map.getContainer().querySelector(".leaflet-popup-close-button");
             close?.setAttribute("aria-label", mapT("Đóng"));

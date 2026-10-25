@@ -1,0 +1,146 @@
+{
+  "pois": [
+    {
+      "name": "Chợ gốm Bát Tràng",
+      "description": "Khám phá sản phẩm gốm và cách quan sát hình dáng, men, hoa văn. Tọa độ demo chưa khảo sát.",
+      "latitude": 20.9784,
+      "longitude": 105.9146,
+      "sources": [
+        {
+          "title": "CSDL du lịch Việt Nam — Làng gốm Bát Tràng",
+          "url": "https://csdl.vietnamtourism.gov.vn/dest/?item=198"
+        },
+        {
+          "title": "Vietnam Tourism — Vietnam's traditional handicrafts",
+          "url": "https://vietnam.travel/jp/node/995"
+        }
+      ],
+      "narrations": {
+        "vi": {
+          "title": "Chợ gốm Bát Tràng",
+          "content": "Chào mừng bạn đến với câu chuyện chợ gốm Bát Tràng. Khu chợ chuyên doanh gốm được đưa vào hoạt động từ tháng 10 năm 2004, tạo thêm nơi giới thiệu và trao đổi sản phẩm của làng nghề. Đồ gốm Bát Tràng phục vụ nhiều nhu cầu, từ sinh hoạt, thờ cúng đến trang trí. Khi dạo qua các gian hàng, bạn hãy thử chọn hai chiếc bát có dáng gần giống nhau rồi so sánh màu men và nét vẽ. Chi tiết nào khiến bạn muốn cầm lên xem kỹ hơn? Một món đồ nhỏ cũng có thể mở ra câu chuyện về người làm ra nó. Trước khi mua, hãy hỏi người bán về công dụng, cách chăm sóc và đóng gói. Với đồ dùng ăn uống, nên hỏi thêm thông tin an toàn và hướng dẫn sử dụng của sản phẩm cụ thể."
+        },
+        "en": {
+          "title": "Bat Trang Pottery Market",
+          "content": "Welcome to the story of Bat Trang Pottery Market. The dedicated market opened in October 2004 as a place to display and trade the village's ceramics. Bat Trang makes objects for daily use, worship and decoration. As you browse, choose two bowls with similar shapes and compare their glazes and painted details. Which small feature catches your eye? Let that question start a conversation with a seller about the maker and the object. Before buying, ask about its intended use, care and protective packaging. For tableware, check the safety information and instructions for that particular product."
+        },
+        "ja": {
+          "title": "バッチャン陶器市場",
+          "content": "バッチャン陶器市場の物語へようこそ。陶器専門の市場は、村の製品を展示し、売買する場所として2004年10月に開かれました。バッチャンでは、日用品、祭祀用の器、装飾品などが作られています。形の似た二つの器を選び、釉薬の色や絵付けを見比べてみましょう。どの細部に心がひかれますか。その気づきをきっかけに、作り手についてお店の人に尋ねてみてください。購入前には用途、手入れ、梱包方法を確認しましょう。食器の場合は、その製品の安全性に関する情報や使用方法も確認してください。"
+        }
+      }
+    },
+    {
+      "name": "Đình làng Bát Tràng",
+      "description": "Tìm hiểu đình làng và nghi thức rước nước sông Hồng trong hội làng. Tọa độ demo chưa khảo sát.",
+      "latitude": 20.9777,
+      "longitude": 105.9138,
+      "sources": [
+        {
+          "title": "Báo ảnh Việt Nam / TTXVN — Nghi thức rước nước trong Lễ hội làng Bát Tràng",
+          "url": "https://vietnam.vnanet.vn/vietnamese/long-form/doc-dao-nghi-thuc-ruoc-nuoc-trong-le-hoi-lang-bat-trang-395142.html"
+        }
+      ],
+      "narrations": {
+        "vi": {
+          "title": "Đình làng Bát Tràng",
+          "content": "Đình làng Bát Tràng nằm bên sông Hồng, gắn với đời sống tín ngưỡng và hội làng. Một nghi thức đặc sắc là rước nước: người dân đi thuyền ra giữa sông, lấy nước vào chum gốm rồi rước về đình để dùng trong việc thờ cúng. Qua nghi lễ ấy, dòng sông và chiếc chum cùng xuất hiện trong câu chuyện văn hóa của làng nghề. Bạn hãy dành một khoảng lặng để hình dung hành trình từ mặt nước về sân đình. Nếu ghé đúng dịp lễ hội, hãy quan sát từ vị trí được hướng dẫn và nhường lối cho đoàn rước. Khi tham quan, giữ giọng nói nhỏ, mặc trang phục phù hợp và hỏi trước khi chụp ảnh. Thử nghĩ xem: bên cạnh một món gốm mang về, ký ức nào về con người nơi đây sẽ ở lại với bạn?"
+        },
+        "en": {
+          "title": "Bat Trang Communal House",
+          "content": "Bat Trang Communal House stands beside the Red River and is connected with the village's spiritual life and festival. In the water procession, villagers take boats into the river, collect water in ceramic jars and bring it back for worship at the communal house. River and pottery meet in this local tradition. Pause and imagine that journey from the water to the courtyard. During a festival, follow the stewards' directions and leave room for the procession. Speak softly, dress respectfully and ask before taking photographs. Beyond a ceramic souvenir, what memory of the people here would you like to take home?"
+        },
+        "ja": {
+          "title": "バッチャン村の共同亭",
+          "content": "バッチャン村の共同亭は紅河のほとりにあり、村の信仰や祭りと結びついています。祭りの水くみの行列では、人々が船で川へ出て、陶器のかめに水をくみ、共同亭へ運んで祭祀に用います。川と焼き物が一つの伝統の中で出会うのです。水辺から庭へ続く道のりを、静かに思い描いてみましょう。祭りの際は係員の案内に従い、行列の通り道を空けてください。見学中は声を落とし、服装に配慮し、撮影前に許可を確認しましょう。陶器のお土産に加えて、この村の人々について、どんな思い出を持ち帰りたいですか。"
+        }
+      }
+    },
+    {
+      "name": "Lò bầu cổ Bát Tràng",
+      "description": "Câu chuyện nung gốm, lò truyền thống và sự thay đổi công nghệ. Tọa độ demo chưa khảo sát.",
+      "latitude": 20.9788,
+      "longitude": 105.9135,
+      "sources": [
+        {
+          "title": "Du lịch nông thôn / Cục Du lịch Quốc gia — Bát Tràng từ làng nghề khói bụi tới làng nghề xanh",
+          "url": "https://nongthon.vietnamtourism.gov.vn/bat-trang-ha-noi-tu-lang-nghe-khoi-bui-toi-lang-nghe-xanh/"
+        },
+        {
+          "title": "Báo ảnh Việt Nam / TTXVN — Nghề gốm gắn với trải nghiệm văn hóa và du lịch",
+          "url": "https://vietnam.vnanet.vn/vietnamese/long-form/bat-trang-phat-trien-nghe-gom-gan-voi-trai-nghiem-van-hoa-va-du-lich-467785.html"
+        }
+      ],
+      "narrations": {
+        "vi": {
+          "title": "Lò bầu cổ Bát Tràng",
+          "content": "Ở điểm dừng lò bầu cổ, mời bạn khám phá công đoạn nung gốm. Bát Tràng từng sử dụng những kiểu lò truyền thống đốt củi hoặc than; về sau, nhiều cơ sở chuyển sang lò gas và lò điện. Những lò cũ còn được giới thiệu trong hành trình tìm hiểu nghề, giúp người xem hình dung một phần phương thức sản xuất trước đây. Hãy quan sát kết cấu lò từ khu vực được phép và thử đặt câu hỏi: người thợ đã sắp xếp sản phẩm và chăm lửa ra sao? Nếu có người hướng dẫn, bạn có thể hỏi thêm về dấu vết sử dụng còn nhìn thấy được. Không đi vào vùng hạn chế hoặc chạm vào thiết bị. Khi rời điểm dừng, hãy thử kể lại hành trình của một nắm đất thành chiếc bát bằng ba từ do chính bạn chọn."
+        },
+        "en": {
+          "title": "Bat Trang Traditional Kiln",
+          "content": "At this traditional kiln stop, explore the firing stage of pottery making. Bat Trang once used wood- or coal-fired kilns; many workshops later adopted gas and electric kilns. Old kilns are also presented to visitors as part of the village's craft heritage. From an area open to visitors, look at the structure and imagine the work involved. How might a potter have arranged the pieces and tended the fire? Ask a guide which visible marks reveal past use. Stay outside restricted areas and do not touch equipment. Before moving on, choose three words of your own to describe a lump of clay becoming a bowl."
+        },
+        "ja": {
+          "title": "バッチャンの伝統的な窯",
+          "content": "この伝統窯の立ち寄り地点では、焼成という工程に注目します。バッチャンでは、かつて薪や石炭を使う窯が利用され、その後、多くの工房がガス窯や電気窯を取り入れました。古い窯は、村の仕事の歴史を知る見学先にもなっています。見学可能な場所から構造を眺め、職人の作業を想像してみましょう。器をどう並べ、火をどう管理したのでしょうか。案内人がいれば、昔の使用の跡について尋ねてみてください。立入禁止の場所には入らず、設備には触れないでください。次へ進む前に、土が器になる道のりを、自分の言葉三つで表してみましょう。"
+        }
+      }
+    },
+    {
+      "name": "Không gian trưng bày gốm Bát Tràng",
+      "description": "Điểm chủ đề về trưng bày và quan sát gốm; không phải vị trí đã xác minh của Bảo tàng Gốm Bát Tràng.",
+      "latitude": 20.9795,
+      "longitude": 105.9154,
+      "sources": [
+        {
+          "title": "Bảo tàng Gốm Bát Tràng — Trưng bày thường xuyên",
+          "url": "https://www.ceramuseum.com/trung-bay/trung-bay-thuong-xuyen.html"
+        }
+      ],
+      "narrations": {
+        "vi": {
+          "title": "Không gian trưng bày gốm Bát Tràng",
+          "content": "Điểm chủ đề này mời bạn nhìn đồ gốm như một câu chuyện về nghề. Một địa chỉ tham khảo thực tế là Bảo tàng Gốm Bát Tràng, nơi giới thiệu sự hình thành làng nghề, quy trình sản xuất và tác phẩm của nghệ nhân. Trưng bày còn có mẫu thử xương gốm, men và những sản phẩm lỗi, giúp người xem chú ý tới quá trình thử nghiệm. Khi đứng trước một hiện vật, hãy quan sát từ dáng tổng thể đến nét trang trí nhỏ nhất. Bạn thích sự cân đối hay một chi tiết bất ngờ? Hãy thử đặt một tên gọi riêng cho món đồ rồi đọc phần giới thiệu để so sánh cảm nhận. Không cầm hiện vật khi chưa được phép. Lưu ý, điểm trên bản đồ demo là điểm chủ đề, chưa phải vị trí đã xác minh của bảo tàng."
+        },
+        "en": {
+          "title": "Bat Trang Ceramics Display",
+          "content": "This thematic stop invites you to read ceramics as a story of craft. One real place to explore is Bat Trang Ceramics Museum, whose permanent displays cover village history, production and artisans' work. Test bodies, glaze samples and unsuccessful pieces also draw attention to experimentation. When viewing an object, move your attention from its overall form to a small decorative detail. Do you prefer balance or a surprising feature? Invent a title for the piece, then read its label and compare your impressions. Handle exhibits only with permission. This demo marker represents a theme; it is not a verified museum location."
+        },
+        "ja": {
+          "title": "バッチャン陶器の展示空間",
+          "content": "このテーマ地点では、陶器を職人の物語として眺めてみましょう。実際の見学先の一つであるバッチャン陶器博物館では、村の歴史、製造工程、職人の作品が紹介されています。素地や釉薬の試料、失敗した作品も、試行錯誤に目を向けるきっかけになります。作品全体の形から、小さな装飾へと視線を移してください。均整の美と意外な細部のどちらにひかれますか。自分で作品名を考えてから説明を読み、印象を比べてみましょう。許可なく展示品に触れないでください。このデモの印はテーマを示しており、博物館の位置を確認したものではありません。"
+        }
+      }
+    },
+    {
+      "name": "Không gian trải nghiệm làm gốm",
+      "description": "Điểm chủ đề về tạo hình và trang trí gốm; chưa gắn với một cơ sở trải nghiệm cụ thể.",
+      "latitude": 20.9779,
+      "longitude": 105.9152,
+      "sources": [
+        {
+          "title": "Báo ảnh Việt Nam / TTXVN — Nghề gốm gắn với trải nghiệm văn hóa và du lịch",
+          "url": "https://vietnam.vnanet.vn/vietnamese/long-form/bat-trang-phat-trien-nghe-gom-gan-voi-trai-nghiem-van-hoa-va-du-lich-467785.html"
+        },
+        {
+          "title": "Bảo tàng Gốm Bát Tràng — Trải nghiệm",
+          "url": "https://www.ceramuseum.com/dich-vu/trai-nghiem.html"
+        }
+      ],
+      "narrations": {
+        "vi": {
+          "title": "Không gian trải nghiệm làm gốm",
+          "content": "Ở điểm chủ đề trải nghiệm, mời bạn hình dung mình thử làm một người thợ gốm. Tại Bát Tràng, du khách có thể tham gia tạo hình hoặc trang trí sản phẩm dưới sự hướng dẫn của cơ sở tổ chức. Bảo tàng Gốm Bát Tràng còn giới thiệu hoạt động ghép tranh từ những mảnh gốm. Nếu chọn nặn đất, bạn muốn làm chiếc cốc, chiếc bát hay một hình dáng riêng? Hãy bắt đầu bằng một ý tưởng nhỏ, lắng nghe người hướng dẫn và cảm nhận từng thao tác của đôi tay. Trước khi đăng ký, hỏi rõ hoạt động bao gồm những gì, chi phí, thời gian nung và cách nhận sản phẩm. Điểm đánh dấu này là chủ đề trong tuyến demo, chưa đại diện cho một xưởng cụ thể. Một vật tự làm có thể chưa tròn đều, nhưng sẽ gợi nhớ lần bạn thử sức với đất."
+        },
+        "en": {
+          "title": "Pottery Making Experience",
+          "content": "At this thematic stop, imagine trying a potter's work. Visitors to Bat Trang can join shaping or decorating activities offered by local operators. The ceramics museum also presents mosaic activities using ceramic fragments. If you choose clay, would you make a cup, a bowl or a shape of your own? Start with a small idea, listen to your instructor and notice each movement of your hands. Before booking, ask what is included, the price, firing time and how to collect the finished piece. This demo marker does not identify a specific workshop. Your handmade object may be uneven, yet it can hold a very personal memory."
+        },
+        "ja": {
+          "title": "陶芸体験スペース",
+          "content": "このテーマ地点では、陶芸に挑戦する自分を想像してみましょう。バッチャンでは、運営する施設の指導のもと、成形や装飾を体験できます。陶器博物館では、陶片を使うモザイク制作も紹介されています。粘土を選ぶなら、カップ、茶碗、それとも自分だけの形を作りますか。小さなアイデアから始め、担当者の説明を聞き、手の動きを感じてみましょう。申し込む前に、体験の内容、料金、焼成にかかる時間、作品の受け取り方法を確認してください。このデモの印は特定の工房を示していません。形が少し不ぞろいでも、自分で作った器は、土と向き合った時間を思い出させてくれるでしょう。"
+        }
+      }
+    }
+  ]
+}
