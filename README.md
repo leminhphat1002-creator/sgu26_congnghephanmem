@@ -30,6 +30,18 @@ Xóa cache cũ không xóa các bài biên soạn trong `poi_narrations`.
 
 ## Chạy local (PowerShell)
 
+**Máy hiện tại đã cài xong:** xem [cách chạy Windows thống nhất](docs/local-windows.md).
+Tạo `local.settings.json` từ bản example một lần, rồi dùng:
+
+```powershell
+.\scripts\run_local.ps1 -CheckOnly
+.\scripts\run_local.ps1
+```
+
+Mở http://localhost:8010. Launcher tự chọn venv Python 3.12 x64, kiểm tra database
+và ba mô hình giọng đọc; cấu hình dữ liệu/QR được lưu riêng và không commit.
+Chưa tạo link Internet ở bước này. Hướng dẫn dưới đây dành cho cài mới/thao tác thủ công.
+
 Khuyến nghị Python 3.12 x64. Máy phát triển, CI và đích triển khai đều dùng Windows;
 không cần Docker, WSL hoặc Bash.
 
@@ -126,6 +138,9 @@ chạy app Windows thật. CD bàn giao đúng ZIP đã qua CI, có thể triể
 OpenSSH đến service Windows khi bật `DEPLOY_ENABLED`. Chưa có máy chủ đích được kết nối.
 Chi tiết artifact, service, secrets và phục hồi tại [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 Demo không thuê server bằng máy Windows tại [docs/FREE_HOSTING.md](docs/FREE_HOSTING.md).
+Tạo link HTTPS demo và QR tự động trên Windows: `.\scripts\run_local.ps1 -PublicDemo`.
+App demo dùng cổng 8011, chạy cùng Cloudflare Quick Tunnel; máy và terminal phải giữ
+hoạt động, URL thay đổi mỗi lần tạo tunnel. Không cần tài khoản Cloudflare/tên miền.
 SQLite dùng cho local và triển khai Windows mặc định; PostgreSQL vẫn được hỗ trợ tùy chọn.
 Test dùng database tạm và giả lập TTS. Job PostgreSQL kiểm tra DB native trên GitHub.
 

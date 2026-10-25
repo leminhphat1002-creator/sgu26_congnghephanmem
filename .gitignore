@@ -16,6 +16,7 @@ audio_files/
 .env
 deploy/.env
 deploy/settings.json
+local.settings.json
 
 # IDE / hệ điều hành
 .idea/

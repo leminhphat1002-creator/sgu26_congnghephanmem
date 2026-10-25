@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
@@ -67,7 +68,7 @@ def create_app() -> FastAPI:
     # Phục vụ CSS, JavaScript và các tài nguyên tĩnh.
     app.mount(
         "/static",
-        StaticFiles(directory=STATIC_DIR),
+        GZipMiddleware(StaticFiles(directory=STATIC_DIR), minimum_size=1024, compresslevel=5),
         name="static",
     )
 

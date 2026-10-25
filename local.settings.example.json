@@ -1,0 +1,9 @@
+{
+  "PORT": 8010,
+  "BIND_HOST": "127.0.0.1",
+  "PUBLIC_BASE_URL": "",
+  "DATABASE_URL": "sqlite:///./data/app.db",
+  "AUDIO_DIR": "./audio_files",
+  "PIPER_MODEL_DIR": "./tts_models",
+  "TRUSTED_PROXY_IPS": "127.0.0.1"
+}

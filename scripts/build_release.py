@@ -32,7 +32,7 @@ def build(revision, output):
                 stage / name,
                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".env"),
             )
-        for name in ("requirements.txt", "alembic.ini"):
+        for name in ("requirements.txt", "alembic.ini", "local.settings.example.json"):
             shutil.copy2(ROOT / name, stage / name)
         voices = json.loads(MANIFEST.read_text(encoding="utf-8"))["voices"]
         (stage / "tts_models").mkdir()
