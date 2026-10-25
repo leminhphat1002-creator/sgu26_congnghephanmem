@@ -123,3 +123,56 @@ async def test_concurrent_requests_generate_audio_only_once(tmp_path, monkeypatc
         False,
         True,
     ]
+
+
+@pytest.mark.asyncio
+async def test_tts_failure_backoff_still_serves_cache_and_recovers(tmp_path, monkeypatch):
+    import app.modules.audio.service as module
+    from app.core.exceptions import AppError
+
+    clock = [100.0]
+    monkeypatch.setattr(module.time, "monotonic", lambda: clock[0])
+    calls = 0
+
+    async def upstream(text, language):
+        nonlocal calls
+        calls += 1
+        if text == "fails":
+            raise RuntimeError("service offline")
+        return b"cached audio"
+
+    monkeypatch.setattr(module, "synthesize_mp3", upstream)
+    service = AudioService(AudioStore(tmp_path))
+    await service.synthesize("cached", "vi")
+    with pytest.raises(AppError, match="không khả dụng"):
+        await service.synthesize("fails", "vi")
+    with pytest.raises(AppError) as error:
+        await service.synthesize("another article", "vi")
+    assert error.value.code == "tts_cooldown"
+    assert calls == 2
+    assert (await service.synthesize("cached", "vi"))["cache_hit"]
+    clock[0] += service.RETRY_COOLDOWN_SECONDS + 1
+    assert not (await service.synthesize("another article", "vi"))["cache_hit"]
+    assert calls == 3
+
+
+@pytest.mark.asyncio
+async def test_upstream_timeout_is_bounded_and_followed_by_cooldown(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    import app.modules.audio.service as module
+    from app.core.exceptions import AppError
+
+    monkeypatch.setattr(module, "get_settings", lambda: SimpleNamespace(tts_timeout_s=0.01))
+
+    async def stalled(*args):
+        await asyncio.Event().wait()
+
+    monkeypatch.setattr(module, "synthesize_mp3", stalled)
+    service = AudioService(AudioStore(tmp_path))
+    with pytest.raises(AppError) as error:
+        await service.synthesize("new text", "vi")
+    assert isinstance(error.value.__cause__, TimeoutError)
+    with pytest.raises(AppError) as error:
+        await service.synthesize("new text", "vi")
+    assert error.value.code == "tts_cooldown"

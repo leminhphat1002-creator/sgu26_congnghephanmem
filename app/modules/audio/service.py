@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import logging
 import re
+import time
 
 from app.core.config import get_settings
 from app.core.exceptions import AppError
@@ -24,6 +25,9 @@ class AudioService:
         self.store = store or AudioStore(get_settings().audio_dir)
         self._locks: dict[str, asyncio.Lock] = {}
         self._locks_guard = asyncio.Lock()
+        self._retry_after: dict[str, float] = {}
+
+    RETRY_COOLDOWN_SECONDS = 30
 
     @staticmethod
     def normalize_text(text: str) -> str:
@@ -81,7 +85,16 @@ class AudioService:
                 }
 
             try:
-                audio = await synthesize_mp3(normalized, language)
+                if time.monotonic() < self._retry_after.get(language, 0):
+                    raise AppError(
+                        "tts_cooldown",
+                        "Giọng đọc MP3 đang tạm nghỉ sau lỗi. Hãy thử sau 30 giây.",
+                        503,
+                    )
+                audio = await asyncio.wait_for(
+                    synthesize_mp3(normalized, language),
+                    timeout=min(get_settings().tts_timeout_s, 10.0),
+                )
 
                 if not audio:
                     raise RuntimeError("TTS không trả về dữ liệu âm thanh")
@@ -99,7 +112,10 @@ class AudioService:
                     "cache_hit": False,
                 }
 
+            except AppError:
+                raise
             except Exception as exc:
+                self._retry_after[language] = time.monotonic() + self.RETRY_COOLDOWN_SECONDS
                 logger.exception("Không thể tạo hoặc lưu âm thanh bằng TTS")
                 raise AppError(
                     "tts_unavailable",

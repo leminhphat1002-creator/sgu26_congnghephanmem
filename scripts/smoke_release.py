@@ -34,6 +34,7 @@ def smoke(archive, revision):
         for command in (
             ("alembic", "upgrade", "head"),
             ("scripts.seed_bat_trang",),
+            ("scripts.check_offline_tts",),
             ("scripts.seed_bat_trang",),
         ):
             subprocess.run([str(python), "-m", *command], cwd=release, env=environment, check=True)

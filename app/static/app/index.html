@@ -8,151 +8,215 @@
 
     <title>Bát Tràng Audio Guide</title>
 
-    <link rel="stylesheet" href="/static/app/style.css">
-    <script src="/static/app/script.js" defer></script>
+    <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+    <link rel="stylesheet" href="/static/app/style.css?v=20261025-i18n1">
+    <script src="/static/vendor/leaflet/leaflet.js" defer></script>
+    <script src="/static/app/i18n.js?v=20261025-i18n1" defer></script>
+    <script src="/static/app/map.js?v=20261025-i18n1" defer></script>
+    <script src="/static/app/script.js?v=20261025-i18n1" defer></script>
 </head>
 
 <body>
+<dialog id="languageDialog" class="language-dialog" aria-labelledby="welcomeHeading" aria-describedby="languageHelp">
+    <div class="welcome-brand">BÁT TRÀNG AUDIO GUIDE</div>
+    <p class="welcome-greeting">Welcome · Xin chào · ようこそ</p>
+    <h2 id="welcomeHeading" data-i18n="Bạn đến từ đâu?">Bạn đến từ đâu?</h2>
+    <p id="languageHelp" data-i18n="Chọn quốc gia để gợi ý ngôn ngữ. Bạn luôn có thể chọn ngôn ngữ khác.">Chọn quốc gia để gợi ý ngôn ngữ. Bạn luôn có thể chọn ngôn ngữ khác.</p>
+    <label for="visitorCountry" data-i18n="Quốc gia / khu vực (không bắt buộc)">Quốc gia / khu vực (không bắt buộc)</label>
+    <select id="visitorCountry">
+        <option value="" data-i18n="Quốc gia khác / bỏ qua">Quốc gia khác / bỏ qua</option>
+        <option value="VN">Việt Nam · Vietnam · ベトナム</option>
+        <option value="JP">日本 · Japan · Nhật Bản</option>
+        <option value="US">United States · Hoa Kỳ · アメリカ</option>
+        <option value="GB">United Kingdom · Anh · イギリス</option>
+        <option value="AU">Australia · Úc · オーストラリア</option>
+    </select>
+    <p class="language-choice-label">Ngôn ngữ / Language / 言語</p>
+    <div class="language-choices" role="group" aria-label="Ngôn ngữ / Language / 言語">
+        <button type="button" data-language-choice="vi" lang="vi" aria-pressed="false">Tiếng Việt</button>
+        <button type="button" data-language-choice="en" lang="en" aria-pressed="false">English</button>
+        <button type="button" data-language-choice="ja" lang="ja" aria-pressed="false">日本語</button>
+    </div>
+    <button id="confirmLanguage" class="primary-button" type="button" data-i18n="Tiếp tục khám phá">Tiếp tục khám phá</button>
+    <p class="language-privacy" data-i18n="Lựa chọn chỉ lưu trên trình duyệt này và có thể đổi bất cứ lúc nào.">Lựa chọn chỉ lưu trên trình duyệt này và có thể đổi bất cứ lúc nào.</p>
+</dialog>
+
 <div class="container">
 
-    <nav class="public-nav" aria-label="Liên kết website"><a href="/share">Mã QR truy cập</a><a href="/admin">Đăng nhập quản lý</a></nav>
+    <nav class="public-nav" aria-label="Liên kết website" data-i18n-aria-label="Liên kết website"><a href="/share" data-i18n="Mã QR truy cập">Mã QR truy cập</a><a href="/admin" data-i18n="Đăng nhập quản lý">Đăng nhập quản lý</a><button id="changeLanguageButton" type="button" aria-haspopup="dialog">Language / Ngôn ngữ / 言語</button></nav>
+    <p id="languagePreferenceStatus" role="status"></p>
     <header class="header">
         <span class="eyebrow">BÁT TRÀNG AUDIO GUIDE</span>
-        <h1>Khám phá làng gốm Bát Tràng</h1>
-        <p>
+        <h1 data-i18n="Khám phá làng gốm Bát Tràng">Khám phá làng gốm Bát Tràng</h1>
+        <p data-i18n="Khám phá từ xa hoặc bật GPS khi đến làng gốm, chọn nơi muốn khám phá và nghe thuyết minh bằng ngôn ngữ yêu thích.">
             Khám phá từ xa hoặc bật GPS khi đến làng gốm, chọn nơi muốn khám phá
             và nghe thuyết minh bằng ngôn ngữ yêu thích.
         </p>
     </header>
 
     <main>
-        <section class="card">
-            <h2>Khám phá theo cách của bạn</h2>
-            <p>Không cần ở Bát Tràng để đọc và nghe thuyết minh.</p>
-            <button id="catalogButton" type="button" class="primary-button">Khám phá từ xa</button>
-            <button id="demoButton" type="button" class="secondary-button">Trải nghiệm vị trí mẫu tại Bát Tràng</button>
-            <p id="modeStatus" role="status">Khám phá từ xa — không sử dụng GPS.</p>
-            <p class="description">Dữ liệu demo: tọa độ minh họa và bài thuyết minh mẫu cần được xác minh trước khi tham quan thực tế.</p>
-            <h3>Vị trí và ngôn ngữ</h3>
+        <details class="card exploration-tools" id="gpsSection" open>
+            <summary data-i18n="Vị trí, GPS và chế độ tham quan">Vị trí, GPS và chế độ tham quan</summary>
+            <div class="exploration-content">
+                <h2 data-i18n="Khám phá theo cách của bạn">Khám phá theo cách của bạn</h2>
+                <p data-i18n="Không cần ở Bát Tràng để đọc và nghe thuyết minh.">Không cần ở Bát Tràng để đọc và nghe thuyết minh.</p>
+                <button id="catalogButton" type="button" class="primary-button" data-i18n="Khám phá từ xa">Khám phá từ xa</button>
+                <button id="demoButton" type="button" class="secondary-button" data-i18n="Trải nghiệm vị trí mẫu tại Bát Tràng">Trải nghiệm vị trí mẫu tại Bát Tràng</button>
+                <p id="modeStatus" role="status" data-i18n="Khám phá từ xa — không sử dụng GPS.">Khám phá từ xa — không sử dụng GPS.</p>
+                <p class="description" data-i18n="Bài thuyết minh đã được biên soạn từ nguồn tham khảo. Tọa độ vẫn là minh họa; cần xác minh trước khi tham quan thực tế.">Bài thuyết minh đã được biên soạn từ nguồn tham khảo. Tọa độ vẫn là minh họa; cần xác minh trước khi tham quan thực tế.</p>
+                <h3 data-i18n="Vị trí tìm kiếm">Vị trí tìm kiếm</h3>
 
-            <div class="form-grid">
-                <div class="field">
-                    <label for="latitude">Vĩ độ</label>
-                    <input
-                        id="latitude"
-                        type="number"
-                        step="any"
-                        min="-90"
-                        max="90"
-                        value="20.978400"
-                    >
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="latitude" data-i18n="Vĩ độ">Vĩ độ</label>
+                        <input
+                            id="latitude"
+                            type="number"
+                            step="any"
+                            min="-90"
+                            max="90"
+                            value="20.978400"
+                        >
+                    </div>
+
+                    <div class="field">
+                        <label for="longitude" data-i18n="Kinh độ">Kinh độ</label>
+                        <input
+                            id="longitude"
+                            type="number"
+                            step="any"
+                            min="-180"
+                            max="180"
+                            value="105.914600"
+                        >
+                    </div>
                 </div>
-
-                <div class="field">
-                    <label for="longitude">Kinh độ</label>
-                    <input
-                        id="longitude"
-                        type="number"
-                        step="any"
-                        min="-180"
-                        max="180"
-                        value="105.914600"
-                    >
-                </div>
-            </div>
-
-            <div class="field language-field">
-                <label for="language">Ngôn ngữ thuyết minh</label>
-                <select id="language">
-                    <option value="vi">Tiếng Việt</option>
-                    <option value="en">English</option>
-                    <option value="ja">日本語</option>
-                </select>
-            </div>
-
-            <button
-                id="gpsButton"
-                type="button"
-                class="secondary-button"
-            >
-                Lấy vị trí hiện tại
-            </button>
-
-            <button
-                id="detectButton"
-                type="button"
-                class="primary-button"
-            >
-                Tìm địa điểm xung quanh
-            </button>
-
-            <div class="auto-gps-section">
-                <h3>Theo dõi GPS tự động</h3>
-                <p class="description">
-                    Tự cập nhật danh sách khi bạn di chuyển.
-                    Không tự phát âm thanh.
-                </p>
 
                 <button
-                    id="autoGpsButton"
+                    id="gpsButton"
                     type="button"
                     class="secondary-button"
-                    aria-pressed="false"
-                >
-                    Bật theo dõi GPS
+                 data-i18n="Lấy vị trí hiện tại">
+                    Lấy vị trí hiện tại
                 </button>
 
-                <p id="autoGpsStatus" class="gps-status">
-                    GPS tự động đang tắt.
-                </p>
-            </div>
+                <button
+                    id="detectButton"
+                    type="button"
+                    class="primary-button"
+                 data-i18n="Tìm địa điểm xung quanh">
+                    Tìm địa điểm xung quanh
+                </button>
 
-            <p id="statusMessage" role="status"
-               aria-live="polite"></p>
-        </section>
+                <div class="auto-gps-section">
+                    <h3 data-i18n="Theo dõi GPS tự động">Theo dõi GPS tự động</h3>
+                    <p class="description" data-i18n="Tự cập nhật danh sách khi bạn di chuyển. Không tự phát âm thanh.">
+                        Tự cập nhật danh sách khi bạn di chuyển.
+                        Không tự phát âm thanh.
+                    </p>
+
+                    <button
+                        id="autoGpsButton"
+                        type="button"
+                        class="secondary-button"
+                        aria-pressed="false"
+                     data-i18n="Bật theo dõi GPS">
+                        Bật theo dõi GPS
+                    </button>
+
+                    <p id="autoGpsStatus" class="gps-status" data-i18n="GPS tự động đang tắt.">
+                        GPS tự động đang tắt.
+                    </p>
+                </div>
+
+                <p id="statusMessage"></p>
+            </div>
+        </details>
 
         <section class="card" id="nearbySection">
             <div class="section-heading">
-                <h2 id="listHeading">Địa điểm Bát Tràng</h2>
-                <span id="listScope" class="radius-label">Khám phá từ xa</span>
+                <h2 id="listHeading" data-i18n="Địa điểm Bát Tràng">Địa điểm Bát Tràng</h2>
+                <span id="listScope" class="radius-label" data-i18n="Khám phá từ xa">Khám phá từ xa</span>
             </div>
 
-            <p class="description">
-                Chọn một địa điểm để xem nội dung và nghe MP3.
+            <p class="description" data-i18n="Chọn một địa điểm để đọc và nghe thuyết minh.">
+                Chọn một địa điểm để đọc và nghe thuyết minh.
             </p>
 
             <div id="locationList" class="location-list">
-                <p class="empty-message">
+                <p class="empty-message" data-i18n="Nhấn &quot;Tìm địa điểm xung quanh&quot; để bắt đầu.">
                     Nhấn "Tìm địa điểm xung quanh" để bắt đầu.
                 </p>
             </div>
         </section>
 
+        <section class="card map-card" id="mapSection" aria-labelledby="mapHeading">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow" data-i18n="BẢN ĐỒ KHÁM PHÁ">BẢN ĐỒ KHÁM PHÁ</span>
+                    <h2 id="mapHeading" data-i18n="Chọn điểm dừng ở Bát Tràng">Chọn điểm dừng ở Bát Tràng</h2>
+                </div>
+                <span class="radius-label" id="mapCount" data-i18n="Đang tải địa điểm">Đang tải địa điểm</span>
+            </div>
+            <p class="description" data-i18n="Chạm vào một điểm đánh dấu để chọn địa điểm và tải bài thuyết minh. Nhấn Play khi muốn nghe.">Chạm vào một điểm đánh dấu để chọn địa điểm và tải bài thuyết minh. Nhấn Play khi muốn nghe.</p>
+            <div class="map-toolbar">
+                <div class="field map-search">
+                    <label for="locationSearch" data-i18n="Tìm địa điểm">Tìm địa điểm</label>
+                    <div class="search-input-wrap">
+                        <input id="locationSearch" type="search" placeholder="Ví dụ: chợ gốm, đình làng…" data-i18n-placeholder="Ví dụ: chợ gốm, đình làng…" autocomplete="off" aria-controls="locationList locationMap">
+                        <button id="clearSearchButton" type="button" aria-label="Xóa từ khóa tìm kiếm" data-i18n-aria-label="Xóa từ khóa tìm kiếm" hidden>×</button>
+                    </div>
+                </div>
+                <div class="field map-language">
+                    <label for="language" data-i18n="Ngôn ngữ thuyết minh">Ngôn ngữ thuyết minh</label>
+                    <select id="language">
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                    </select>
+                </div>
+                <button id="fitMapButton" class="secondary-button" type="button" data-i18n="Xem tất cả điểm">Xem tất cả điểm</button>
+            </div>
+            <div id="locationMap" class="location-map" role="region" aria-label="Bản đồ các địa điểm Bát Tràng" data-i18n-aria-label="Bản đồ các địa điểm Bát Tràng" aria-describedby="mapStatus"></div>
+            <p id="mapNotice" class="map-notice" role="status" hidden></p>
+            <div class="map-footer">
+                <p id="mapStatus" role="status" aria-live="polite" data-i18n="Đang tải bản đồ và các điểm tham quan…">Đang tải bản đồ và các điểm tham quan…</p>
+                <a id="mapResultLink" href="#resultCard" hidden data-i18n="Đọc và nghe thuyết minh ↓">Đọc và nghe thuyết minh ↓</a>
+            </div>
+            <p class="map-disclaimer" data-i18n="Tọa độ và địa điểm trong đồ án là dữ liệu minh họa, cần xác minh trước khi tham quan thực tế.">Tọa độ và địa điểm trong đồ án là dữ liệu minh họa, cần xác minh trước khi tham quan thực tế.</p>
+            <p class="map-disclaimer"><span data-i18n="Nền bản đồ Bát Tràng được lưu cùng ứng dụng; có thể kéo và phóng to trong khu vực này mà không cần tải ảnh nền từ Internet.">Nền bản đồ Bát Tràng được lưu cùng ứng dụng; có thể kéo và phóng to trong khu vực này mà không cần tải ảnh nền từ Internet.</span> <a href="/static/app/bat-trang-basemap.geojson" download data-i18n="Dữ liệu bản đồ (ODbL)">Dữ liệu bản đồ (ODbL)</a>.</p>
+        </section>
+
         <section class="card result-card" id="resultCard" hidden>
-            <span class="eyebrow">THUYẾT MINH ĐỊA ĐIỂM</span>
-
+            <div class="section-heading">
+                <span class="eyebrow" data-i18n="THUYẾT MINH ĐỊA ĐIỂM">THUYẾT MINH ĐỊA ĐIỂM</span>
+                <a class="back-to-map" href="#mapSection" data-i18n="Quay lại bản đồ ↑">Quay lại bản đồ ↑</a>
+            </div>
             <h2 id="locationName"></h2>
-
             <div class="metadata">
                 <span id="distanceInfo"></span>
                 <span id="languageInfo"></span>
             </div>
-
-            <h3>Nội dung thuyết minh</h3>
+            <h3 data-i18n="Nội dung thuyết minh">Nội dung thuyết minh</h3>
             <p id="narrationText"></p>
-
+            <button id="retryNarrationButton" class="secondary-button retry-narration" type="button" hidden data-i18n="Thử tải lại thuyết minh">Thử tải lại thuyết minh</button>
             <div id="audioSection" hidden>
-                <h3>Nghe thuyết minh</h3>
-                <audio id="audioPlayer" controls preload="none">
-                </audio>
+                <h3 data-i18n="Nghe thuyết minh">Nghe thuyết minh</h3>
+                <p id="audioStatus" class="description" role="status" aria-live="polite"></p>
+                <audio id="audioPlayer" controls preload="none" hidden></audio>
+                <div class="speech-controls">
+                    <button id="deviceSpeechButton" class="secondary-button" type="button" hidden data-i18n="Nghe bằng giọng thiết bị">Nghe bằng giọng thiết bị</button>
+                    <button id="stopSpeechButton" class="secondary-button" type="button" hidden data-i18n="Dừng đọc">Dừng đọc</button>
+                    <button id="retryAudioButton" class="secondary-button" type="button" hidden data-i18n="Thử phát lại">Thử phát lại</button>
+                </div>
                 <p id="cacheInfo" class="description"></p>
                 <p id="fallbackNotice" class="fallback-notice" hidden></p>
-
             </div>
         </section>
+
     </main>
 
-    <footer>
+    <footer data-i18n="Đồ án Công nghệ phần mềm — Bát Tràng Audio Guide">
         Đồ án Công nghệ phần mềm — Bát Tràng Audio Guide
     </footer>
 

@@ -41,6 +41,9 @@ jobs:
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -48,6 +51,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements*.txt
       - run: python -m pip install -r requirements-dev.txt
+      - run: node --test tests/frontend/i18n.test.cjs
       - run: python -m pytest --cov=app --cov-report=term-missing
 
   test-postgres:
@@ -90,7 +94,10 @@ jobs:
           python-version: "3.12"
           architecture: x64
       - name: Build Windows ZIP with dependency wheels
-        run: python -m scripts.build_release --revision "$env:GITHUB_SHA" --output "$env:RUNNER_TEMP/bat-trang-windows.zip"
+        run: |
+          python -m scripts.setup_offline_tts
+          if ($LASTEXITCODE -ne 0) { throw 'Offline voice setup failed' }
+          python -m scripts.build_release --revision "$env:GITHUB_SHA" --output "$env:RUNNER_TEMP/bat-trang-windows.zip"
       - name: Test actual packaged app with offline installation
         run: python -m scripts.smoke_release --revision "$env:GITHUB_SHA" --archive "$env:RUNNER_TEMP/bat-trang-windows.zip"
       - uses: actions/upload-artifact@v4

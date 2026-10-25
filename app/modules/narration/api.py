@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.modules.admin.repository import AdminRepository
 from app.modules.audio.api import get_audio_service
+from app.modules.audio.offline import OfflineSpeech
 from app.modules.audio.service import AudioService
 from app.modules.content.api import get_content_service
 from app.modules.content.service import ContentService
@@ -20,6 +24,14 @@ from app.modules.narration.schemas import (
 from app.modules.narration.service import NarrationService
 
 router = APIRouter(tags=["narration"])
+
+
+async def get_offline_speech(
+    request: Request, audio: Annotated[AudioService, Depends(get_audio_service)]
+) -> OfflineSpeech:
+    if not hasattr(request.app.state, "offline_speech"):
+        request.app.state.offline_speech = OfflineSpeech(audio.store)
+    return request.app.state.offline_speech
 
 
 def get_narration_service(
@@ -97,6 +109,61 @@ async def narrate_selected_location(
             status_code=422,
             detail=message,
         ) from exc
+
+
+@router.get("/narration/locations/{location_id}/text", response_model=NarrationDetectResponse)
+async def selected_location_text(
+    location_id: int,
+    service: Annotated[NarrationService, Depends(get_narration_service)],
+    language: str = Query(default="vi", pattern="^(vi|en|ja)$"),
+):
+    """Trả bài viết ngay, không phụ thuộc mạng hoặc dịch vụ tạo giọng đọc."""
+    try:
+        result = await service.narrate_location(
+            location_id=location_id, language=language, include_audio=False
+        )
+        if result.get("text"):
+            version = hashlib.sha256(result["text"].encode()).hexdigest()
+            result["stream_url"] = (
+                f"/narration/locations/{location_id}/speech?language={language}&version={version}"
+            )
+            AdminRepository(service.session).record(
+                "visitor", "narration", str(location_id), "local"
+            )
+        return result
+    except ValueError as exc:
+        status = 404 if str(exc) == "Không tìm thấy địa điểm" else 422
+        raise HTTPException(status_code=status, detail=str(exc)) from exc
+
+
+@router.get("/narration/locations/{location_id}/speech")
+async def stream_selected_speech(
+    location_id: int,
+    service: Annotated[NarrationService, Depends(get_narration_service)],
+    speech: Annotated[OfflineSpeech, Depends(get_offline_speech)],
+    language: str = Query(default="vi", pattern="^(vi|en|ja)$"),
+    version: str | None = Query(default=None, pattern="^[0-9a-f]{64}$"),
+):
+    """Phát giọng cục bộ khi nhấn Play, không phải chờ API tạo MP3 qua mạng."""
+    try:
+        result = await service.narrate_location(location_id, language, include_audio=False)
+    except ValueError as exc:
+        status = 404 if str(exc) == "Không tìm thấy địa điểm" else 422
+        raise HTTPException(status_code=status, detail=str(exc)) from exc
+    text = result.get("text")
+    if not text:
+        raise HTTPException(404, "Không có nội dung thuyết minh")
+    if version and version != hashlib.sha256(text.encode()).hexdigest():
+        raise HTTPException(409, "Bài viết vừa thay đổi; hãy tải lại bài trước khi nghe.")
+    actual_language = result["content_language"]
+    key = speech.cache_key(text, actual_language)
+    headers = {"X-Audio-Engine": "piper-local", "Cache-Control": "no-store"}
+    if speech.store.exists(key):
+        return FileResponse(speech.store._get_path(key), media_type="audio/mpeg", headers=headers)
+    await asyncio.to_thread(speech.check, actual_language)
+    return StreamingResponse(
+        speech.stream_async(text, actual_language), media_type="audio/mpeg", headers=headers
+    )
 
 
 @router.get("/narration/nearby")

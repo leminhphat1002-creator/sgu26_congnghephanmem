@@ -3,6 +3,9 @@ uvicorn==0.34.0
 SQLAlchemy==2.0.36
 alembic==1.14.0
 edge-tts==7.3.1
+piper-tts[ja]==1.8.0
+pyopenjtalk-plus==0.4.1.post10
+lameenc==1.9.0
 pytest-asyncio==1.2.0
 httpx==0.28.1
 qrcode[pil]==8.2

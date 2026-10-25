@@ -25,5 +25,6 @@ class NarrationDetectResponse(BaseModel):
 
     text: str | None = None
     audio_url: str | None = None
+    stream_url: str | None = None
     cache_hit: bool | None = None
     message: str | None = None

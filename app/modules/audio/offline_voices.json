@@ -1,0 +1,69 @@
+{
+  "repository": "rhasspy/piper-voices",
+  "revision": "5041a7a49ae5b3a0f30e6837769eb03fdbb231bd",
+  "voices": {
+    "vi": {
+      "name": "vi_VN-vais1000-medium",
+      "sample_rate": 22050,
+      "files": [
+        {
+          "filename": "vi_VN-vais1000-medium.onnx",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx",
+          "sha256": "ec7c89e2c85f4d1edc24b6120c18aaf1bda614f06b511567eb9c7c0de15e2dab"
+        },
+        {
+          "filename": "vi_VN-vais1000-medium.onnx.json",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx.json",
+          "sha256": "fafb9da1354ed4b77c31af228ed41fb41cd825c14cffa105454b25e6ae751ee0"
+        },
+        {
+          "filename": "vi_VN-vais1000-medium.MODEL_CARD",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/vi/vi_VN/vais1000/medium/MODEL_CARD",
+          "sha256": "302db8a930ffc2b1c2181db26deaf8272116eca2b08b8f80da6375b0a994af7b"
+        }
+      ]
+    },
+    "en": {
+      "name": "en_US-ljspeech-medium",
+      "sample_rate": 22050,
+      "files": [
+        {
+          "filename": "en_US-ljspeech-medium.onnx",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/en/en_US/ljspeech/medium/en_US-ljspeech-medium.onnx",
+          "sha256": "6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22"
+        },
+        {
+          "filename": "en_US-ljspeech-medium.onnx.json",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/en/en_US/ljspeech/medium/en_US-ljspeech-medium.onnx.json",
+          "sha256": "141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860"
+        },
+        {
+          "filename": "en_US-ljspeech-medium.MODEL_CARD",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/en/en_US/ljspeech/medium/MODEL_CARD",
+          "sha256": "fbee1529c89d36b3fe76d7e9f3f832dce17f44900a52d76a9bda735654766b4d"
+        }
+      ]
+    },
+    "ja": {
+      "name": "ja_JP-hi_fi_captain-medium",
+      "sample_rate": 22050,
+      "files": [
+        {
+          "filename": "ja_JP-hi_fi_captain-medium.onnx",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/ja/ja_JP/hi_fi_captain/medium/ja_JP-hi_fi_captain-medium.onnx",
+          "sha256": "5eafa1610fc7a0ff2e7fde9cbe0972d876266e23d8db331727eb2466f19460eb"
+        },
+        {
+          "filename": "ja_JP-hi_fi_captain-medium.onnx.json",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/ja/ja_JP/hi_fi_captain/medium/ja_JP-hi_fi_captain-medium.onnx.json",
+          "sha256": "fe9aeda38318607ba114926d1d7ee7d56295f9af3774a99a42b36f4354cabf27"
+        },
+        {
+          "filename": "ja_JP-hi_fi_captain-medium.MODEL_CARD",
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/ja/ja_JP/hi_fi_captain/medium/MODEL_CARD",
+          "sha256": "26dcad3474c39c7fc394c1e57e60121c90832afa9f43e7942faa7c51e1e81905"
+        }
+      ]
+    }
+  }
+}

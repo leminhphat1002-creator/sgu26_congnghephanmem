@@ -189,6 +189,8 @@ class NarrationService:
         self,
         location_id: int,
         language: str = "vi",
+        *,
+        include_audio: bool = True,
     ) -> dict[str, Any]:
         """Thuyết minh địa điểm người dùng chọn theo ID, không cần kích hoạt GPS."""
         if language not in ContentService.SUPPORTED_LANGUAGES:
@@ -234,6 +236,10 @@ class NarrationService:
             cache_hit=None,
             message="Đã tạo nội dung thuyết minh.",
         )
+
+        # Nội dung SQLite trả ngay; giao diện chuẩn bị giọng đọc ở yêu cầu riêng.
+        if not include_audio:
+            return result
 
         try:
             audio = await asyncio.wait_for(

@@ -86,6 +86,67 @@ def test_text_survives_tts_failure(environment):
     assert client.post("/narration/locations/99999").status_code == 404
 
 
+def test_text_is_available_without_waiting_for_or_calling_tts(environment):
+    client, session, audio = environment
+    audio.synthesize.side_effect = AssertionError("Text requests must never call TTS")
+    location_id = client.get("/narration/catalog").json()[0]["location"]["id"]
+    row = session.scalar(
+        select(PoiNarration).where(
+            PoiNarration.location_id == location_id, PoiNarration.language == "vi"
+        )
+    )
+    row.content = "Bài đã cập nhật, không chờ dịch vụ giọng đọc."
+    session.commit()
+    result = client.get(f"/narration/locations/{location_id}/text?language=vi")
+    assert result.status_code == 200
+    assert result.json()["text"] == row.content
+    assert result.json()["audio_url"] is None
+    audio.synthesize.assert_not_awaited()
+    assert client.get("/narration/locations/99999/text").status_code == 404
+    assert client.get(f"/narration/locations/{location_id}/text?language=fr").status_code == 422
+
+
+def test_local_stream_cache_range_and_stale_text_version(environment, tmp_path, monkeypatch):
+    from app.modules.audio.offline import OfflineSpeech
+    from app.modules.audio.store import AudioStore
+    from app.modules.narration.api import get_offline_speech
+
+    client, session, cloud = environment
+    speech = OfflineSpeech(AudioStore(tmp_path / "local-audio"))
+    monkeypatch.setattr(speech, "check", lambda language: None)
+    used = []
+
+    def stream(text, language):
+        used.append(language)
+        yield b"first-"
+        yield b"second"
+        speech.store.write(speech.cache_key(text, language), b"first-second")
+
+    monkeypatch.setattr(speech, "stream", stream)
+    client.app.dependency_overrides[get_offline_speech] = lambda: speech
+    location_id = client.get("/narration/catalog").json()[0]["location"]["id"]
+    data = client.get(f"/narration/locations/{location_id}/text?language=vi").json()
+    response = client.get(data["stream_url"])
+    assert response.content == b"first-second"
+    assert response.headers["x-audio-engine"] == "piper-local"
+    assert response.headers["content-type"] == "audio/mpeg"
+    cached = client.get(data["stream_url"], headers={"Range": "bytes=0-4"})
+    assert cached.status_code == 206
+    assert cached.content == b"first"
+    assert used == ["vi"]
+    cloud.synthesize.assert_not_awaited()
+    row = session.scalar(
+        select(PoiNarration).where(
+            PoiNarration.location_id == location_id, PoiNarration.language == "vi"
+        )
+    )
+    row.content = "Updated after the visitor opened the article"
+    session.commit()
+    assert client.get(data["stream_url"]).status_code == 409
+    assert client.get("/narration/locations/99999/speech").status_code == 404
+    assert client.get(f"/narration/locations/{location_id}/speech?language=fr").status_code == 422
+
+
 def test_delete_location_cascades_narrations(environment):
     client, session, _ = environment
     location_id = client.get("/narration/catalog").json()[0]["location"]["id"]

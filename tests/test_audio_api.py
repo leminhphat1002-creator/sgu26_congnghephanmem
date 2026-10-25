@@ -1,5 +1,6 @@
 """Kiểm thử Audio API mà không gọi Edge TTS thật."""
 
+import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
@@ -10,6 +11,20 @@ from app.main import app
 from app.modules.audio.api import get_audio_service
 from app.modules.audio.service import AudioService
 from app.modules.audio.store import AudioStore
+
+
+@pytest.mark.asyncio
+async def test_requests_share_audio_service_but_apps_are_isolated(tmp_path, monkeypatch):
+    from fastapi import FastAPI, Request
+
+    monkeypatch.setattr(
+        "app.modules.audio.api.AudioService", lambda: AudioService(AudioStore(tmp_path))
+    )
+    request = Request({"type": "http", "app": FastAPI()})
+    first, second = await asyncio.gather(get_audio_service(request), get_audio_service(request))
+    assert first is second
+    other = Request({"type": "http", "app": FastAPI()})
+    assert await get_audio_service(other) is not first
 
 
 @pytest.fixture

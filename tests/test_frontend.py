@@ -13,6 +13,7 @@ def test_homepage():
     assert "Tìm địa điểm xung quanh" in response.text
     assert 'id="locationList"' in response.text
     assert 'id="autoGpsButton"' in response.text
+    assert response.headers["cache-control"] == "no-cache"
 
 
 def test_frontend_css():
@@ -35,3 +36,4 @@ def test_frontend_javascript():
     assert "/narration/locations/" in response.text
     assert "selectLocation" in response.text
     assert "watchPosition" in response.text
+    assert response.headers["cache-control"] == "no-cache"

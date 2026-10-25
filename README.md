@@ -1,16 +1,28 @@
 # Bát Tràng Audio Guide
 
-Ứng dụng thuyết minh đa ngôn ngữ dùng FastAPI, SQLite, GPS và Edge TTS.
+Ứng dụng thuyết minh đa ngôn ngữ dùng FastAPI, SQLite, GPS và Piper TTS cục bộ.
 Giữ kiến trúc modular monolith 3 lớp: API/schema → service → repository/client/store.
 
 ## Chức năng
 
+- **Ngôn ngữ cho khách:** lần đầu mở trang sẽ hỏi quốc gia/khu vực (tùy chọn)
+  và ngôn ngữ Việt/Anh/Nhật. Đổi cả giao diện và thuyết minh, ghi nhớ riêng
+  trên trình duyệt; nút Language ở đầu trang cho phép đổi lại. Xem [chi tiết](docs/visitor-language.md).
 - **Khám phá từ xa:** xem danh sách và chọn nghe mà không cần cấp GPS.
+- **Bản đồ tương tác:** chọn điểm đánh dấu ở Bát Tràng để tải thuyết minh; lựa chọn đồng bộ
+  với danh sách và ngôn ngữ Việt/Anh/Nhật. Có nút xem tất cả điểm và liên kết tới bài đã chọn.
+- Tìm tên địa điểm có/không dấu, lọc chung trên bản đồ và danh sách. Chọn điểm sẽ hiện ngay
+  khung bài đang tải; đổi ngôn ngữ tự tải bản mới cho chính điểm đó. Bấm lại cùng điểm/ngôn
+  ngữ không gửi thêm yêu cầu hoặc đặt lại MP3; có nút thử lại nếu tải lỗi/chưa có âm thanh.
+  Nút Xem tất cả điểm bỏ bộ lọc, mở toàn bộ catalog Bát Tràng và căn lại bản đồ, kể cả khi
+  vị trí tìm kiếm hiện tại không có điểm nào.
+- Cập nhật vị trí giữ bài và âm thanh nếu điểm còn trong kết quả, cập nhật khoảng cách,
+  gợi ý điểm gần nhất trong danh sách. Không tự chọn điểm hoặc tự phát âm thanh.
 - **Tham quan tại chỗ:** tìm địa điểm đã lưu trong bán kính 500 m, gần nhất trước.
 - **Vị trí mẫu:** mô phỏng tọa độ tại Bát Tràng, hiển thị rõ khác với GPS thiết bị.
 - Nội dung Việt, Anh, Nhật lưu lâu dài trong `poi_narrations`, khóa theo địa điểm/ngôn ngữ.
 - Thiếu bản ngôn ngữ yêu cầu: thử tiếng Anh rồi tiếng Việt, thông báo bản thay thế.
-- Edge TTS tạo MP3 và cache; nếu TTS lỗi vẫn hiển thị văn bản. Người dùng nhấn Play để nghe.
+- Piper tạo giọng đọc cục bộ và cache; văn bản hiển thị ngay. Người dùng nhấn Play để nghe.
 
 Luồng sử dụng mới không gọi Wikipedia để tìm POI hoặc lấy nội dung. Client Wikimedia cũ
 và các API quản lý cache cũ được giữ để tham khảo/tương thích; không tham gia luồng thuyết minh.
@@ -24,6 +36,7 @@ không cần Docker, WSL hoặc Bash.
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python -m scripts.setup_offline_tts
 .\.venv\Scripts\python -m alembic upgrade head
 .\.venv\Scripts\python -m scripts.seed_bat_trang
 .\.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
@@ -38,17 +51,42 @@ Migration mới chỉ thêm bảng, không sửa migration cũ hoặc xóa dữ 
 Seed chạy lặp không tạo trùng và không ghi đè bài đã biên tập. Dữ liệu đang sử dụng chỉ giữ các điểm Bát Tràng;
 catalog từ xa liệt kê địa điểm sẵn sàng có bài trong `poi_narrations`.
 
-**Dữ liệu demo:** 5 điểm, 15 bài mẫu, tọa độ minh họa quanh Bát Tràng; chưa phải dữ liệu
-khảo sát hay nội dung chính thức. Hai điểm trưng bày/trải nghiệm là điểm giả định phục vụ demo.
-Cần xác minh tên, tọa độ, thông tin lịch sử và bản dịch trước khi dùng ngoài thực tế.
-Chỉnh dữ liệu mẫu trong `scripts/seed_bat_trang.py` trước lần seed đầu tiên; với DB đã seed,
-biên tập trực tiếp bảng `poi_narrations` và `locations`, vì seed không ghi đè dữ liệu.
+**Nội dung Bát Tràng:** 5 điểm, 15 bài biên soạn bằng tiếng Việt, Anh và Nhật, có nguồn
+tham khảo cho từng điểm trong [tệp nội dung](scripts/content/bat_trang_narrations.json).
+Bài viết phục vụ đồ án, không phải nội dung chính thức của đơn vị quản lý di tích.
+Tọa độ vẫn là minh họa chưa khảo sát; hai điểm trưng bày/trải nghiệm là điểm chủ đề,
+không phải vị trí đã xác minh của bảo tàng hoặc một xưởng cụ thể.
+
+Để đưa bài mới vào DB cũ, chạy lại `python -m scripts.seed_bat_trang`.
+Lệnh tạo bản sao SQLite trong `data/backups/`, thêm bài còn thiếu và chỉ thay những bài
+khớp hoàn toàn với mẫu cũ (kiểm tra cả tiêu đề và nội dung). Các bài đã tự biên tập,
+tọa độ, tài khoản và phiên quản trị được giữ lại. Bản sao DB không được commit.
+Sửa bài đang sử dụng tại trang quản lý; sửa tệp JSON nếu muốn đổi nội dung cho DB mới.
+Nguồn được kiểm tra ngày 25/10/2026; bản dịch cần được rà soát trước khi dùng chính thức.
 
 ## API chính
+
+Trang người dùng lấy văn bản ngay, sau đó nhấn Play để nghe **Piper chạy trên CPU máy chủ**.
+Âm thanh được gửi từng đoạn khi tạo ra, không chờ tạo toàn bài hoặc gọi dịch vụ giọng đọc
+qua Internet. Bài hoàn tất được lưu để lần sau phát từ file; bài sửa có khóa cache mới.
+Chỉ tự tải mô hình trong lệnh setup, không tải khi khách truy cập. Mô hình khoảng 204 MB,
+được ghim revision và SHA-256 trong `app/modules/audio/offline_voices.json`.
+
+Chạy `python -m scripts.check_offline_tts` để thử cả ba ngôn ngữ với socket bị chặn và cache
+trống. Trước buổi demo, chạy `python -m scripts.prepare_narration_audio` để tạo trước toàn bộ
+bài đang dùng. Giọng thiết bị vẫn là lựa chọn phụ nếu máy có giọng đúng ngôn ngữ. Giọng đọc
+cục bộ có âm sắc khác Edge TTS; máy chủ phải hoạt động và cài đủ mô hình/thư viện.
+
+CI/CD Windows tải và kiểm tra mô hình lúc build, đóng gói mô hình cùng dependency wheels;
+smoke test của ZIP kiểm tra tạo giọng khi bị chặn mạng. File mô hình và MP3 không commit.
+Có thể đổi thư mục mô hình bằng `PIPER_MODEL_DIR` và `setup_offline_tts --directory ...`.
+Thông tin nguồn và giấy phép ở [docs/offline-tts.md](docs/offline-tts.md).
 
 | API | Mục đích |
 | --- | --- |
 | `GET /narration/catalog` | Danh sách có bài thuyết minh, không cần GPS |
+| `GET /narration/locations/{id}/text?language=vi` | Bài viết trả ngay từ DB, không gọi TTS |
+| `GET /narration/locations/{id}/speech?language=vi` | Phát từng đoạn từ Piper cục bộ; file cache hỗ trợ tua |
 | `GET /narration/nearby?latitude=...&longitude=...` | POI SQLite trong 500 m |
 | `POST /narration/locations/{id}?language=vi` | Thuyết minh theo lựa chọn, không cần GPS |
 | `POST /narration/detect` | Chọn POI trong bán kính kích hoạt (mặc định 80 m) |
@@ -57,7 +95,18 @@ biên tập trực tiếp bảng `poi_narrations` và `locations`, vì seed khô
 | `GET /audio/{filename}` | Phát MP3 đã tạo |
 
 GPS thiết bị cần quyền vị trí và HTTPS hoặc localhost. Chế độ mô phỏng không giả mạo GPS
-thiết bị. Đọc bài từ database không cần Internet; tạo MP3 mới vẫn cần kết nối tới Edge TTS.
+thiết bị. Đọc và tạo giọng mới không cần Internet sau khi setup. Máy khách vẫn cần kết nối
+tới máy chủ. Các API POST tạo MP3 cũ dùng Edge TTS được giữ để tương thích, không dùng trong
+luồng nghe mới của trang người dùng.
+
+Bản đồ dùng Leaflet 1.9.4 lưu cục bộ ở `app/static/vendor/leaflet`, kèm giấy phép BSD-2-Clause;
+không tải thư viện JavaScript từ CDN lúc mở trang. Nền OpenStreetMap cần Internet và giữ
+attribution trên bản đồ. Không tải trước hoặc lưu offline hàng loạt các ô bản đồ. Khi nền
+bản đồ lỗi, vẫn chọn được marker hoặc dùng danh sách. Điểm thiếu tọa độ không có marker
+nhưng vẫn chọn được trong danh sách. Chỉ vẽ các điểm của catalog/phạm vi tìm kiếm hiện tại;
+không tự xin quyền GPS hoặc tra cứu địa điểm từ bên thứ ba.
+Tham khảo [Leaflet](https://leafletjs.com/examples/quick-start/) và
+[OpenStreetMap tile policy](https://operations.osmfoundation.org/policies/tiles/).
 
 ## Kiểm thử và CI
 

@@ -12,6 +12,7 @@ import zipfile
 from pathlib import Path
 
 from deploy.windows_release import digest, validate_revision
+from scripts.setup_offline_tts import MANIFEST, verify
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,6 +34,14 @@ def build(revision, output):
             )
         for name in ("requirements.txt", "alembic.ini"):
             shutil.copy2(ROOT / name, stage / name)
+        voices = json.loads(MANIFEST.read_text(encoding="utf-8"))["voices"]
+        (stage / "tts_models").mkdir()
+        for voice in voices.values():
+            for entry in voice["files"]:
+                source = ROOT / "tts_models" / entry["filename"]
+                if not verify(source, entry["sha256"]):
+                    raise RuntimeError("Run python -m scripts.setup_offline_tts before building")
+                shutil.copy2(source, stage / "tts_models" / source.name)
         subprocess.run(
             [
                 sys.executable,

@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 
 from app.core.auth import require_admin
@@ -22,8 +22,11 @@ router = APIRouter(tags=["audio"])
 _FILENAME_PATTERN = re.compile(r"^[0-9a-f]{64}\.mp3$")
 
 
-def get_audio_service() -> AudioService:
-    return AudioService()
+async def get_audio_service(request: Request) -> AudioService:
+    # Dùng chung khóa và thời gian nghỉ sau lỗi cho mọi yêu cầu trong một app.
+    if not hasattr(request.app.state, "audio_service"):
+        request.app.state.audio_service = AudioService()
+    return request.app.state.audio_service
 
 
 @router.post("/audio/tts", response_model=TTSResponse, dependencies=[Depends(require_admin)])

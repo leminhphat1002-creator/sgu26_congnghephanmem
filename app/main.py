@@ -48,8 +48,13 @@ def create_app() -> FastAPI:
     async def security_headers(request: Request, call_next):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Referrer-Policy"] = "same-origin"
+        # Map tiles require an origin Referer; admin/API responses keep the stricter policy.
+        response.headers["Referrer-Policy"] = (
+            "strict-origin-when-cross-origin" if request.url.path == "/" else "same-origin"
+        )
         response.headers["X-Frame-Options"] = "DENY"
+        if request.url.path == "/" or request.url.path.startswith("/static/app/"):
+            response.headers["Cache-Control"] = "no-cache"
         if request.url.path.startswith(("/admin", "/api/admin")):
             response.headers["Cache-Control"] = "no-store"
             response.headers["Content-Security-Policy"] = (
