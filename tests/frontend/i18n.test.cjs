@@ -7,6 +7,13 @@ const base = path.join(__dirname, "../../app/static/app");
 const source = fs.readFileSync(path.join(base, "i18n.js"), "utf8");
 const key = "bat-trang-visitor-language-v1";
 
+function readCatalog(scriptSource) {
+    // Git checks out CRLF on Windows; do not rely on a literal LF delimiter.
+    const match = scriptSource.match(/const messages = ([\s\S]*?);\s*const supported\b/);
+    assert.ok(match, "Translation catalog declaration is missing");
+    return JSON.parse(match[1]);
+}
+
 function element(dataset = {}) {
     return {
         dataset, handlers: {}, attributes: {}, value: "", textContent: "",
@@ -98,8 +105,15 @@ test("translation preserves parameters, missing names and user-authored place na
     assert.equal(user.api.t("Ngôn ngữ: {language}", { language: "日本語" }), "言語：日本語");
 });
 
+test("translation catalog can be read with LF and Windows CRLF line endings", () => {
+    const lf = source.replace(/\r\n?/g, "\n");
+    const crlf = lf.replace(/\n/g, "\r\n");
+    assert.deepEqual(readCatalog(lf), readCatalog(crlf));
+    assert.ok(Object.keys(readCatalog(crlf)).length > 0);
+});
+
 test("all annotated public labels have English and Japanese translations with matching parameters", () => {
-    const catalog = JSON.parse(source.split("const messages = ")[1].split(";\n    const supported")[0]);
+    const catalog = readCatalog(source);
     const params = value => [...value.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort();
     for (const [original, translations] of Object.entries(catalog)) {
         assert.equal(translations.length, 2, original);
