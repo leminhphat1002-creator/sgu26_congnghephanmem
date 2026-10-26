@@ -101,8 +101,15 @@ def logout(request: Request, response: Response, identity: Identity, db: Databas
 
 
 @router.get("/dashboard")
-def dashboard(identity: Identity, db: Database):
-    return AdminService(AdminRepository(db)).dashboard()
+def dashboard(request: Request, identity: Identity, db: Database):
+    result = AdminService(AdminRepository(db)).dashboard()
+    result.update(request.app.state.visitor_presence.snapshot())
+    return result
+
+
+@router.get("/presence")
+def presence(request: Request, identity: Identity):
+    return request.app.state.visitor_presence.snapshot()
 
 
 @router.get("/locations")

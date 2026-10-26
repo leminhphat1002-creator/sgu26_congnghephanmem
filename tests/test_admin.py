@@ -189,6 +189,47 @@ def test_dashboard_counts_real_usage(environment):
     assert event.actor == "visitor" and event.target == "1" and event.status == "success"
 
 
+def test_presence_counts_browsers_separately_from_usage_and_requires_admin(environment):
+    client, _ = environment
+    assert client.get("/api/admin/presence").status_code == 401
+    login(client)
+    assert client.get("/api/admin/presence").json()["active_visitors"] == 0
+    before = client.get("/api/admin/dashboard").json()["requests_today"]
+    for _ in range(3):
+        response = client.post("/api/presence/heartbeat")
+        assert response.status_code == 204
+        assert response.content == b""
+        assert "HttpOnly" in response.headers["set-cookie"]
+        assert "Path=/api/presence" in response.headers["set-cookie"]
+        assert response.headers["cache-control"] == "no-store"
+    assert client.get("/api/admin/dashboard").json()["active_visitors"] == 1
+    with TestClient(client.app) as second_browser:
+        assert second_browser.post("/api/presence/heartbeat").status_code == 204
+    result = client.get("/api/admin/dashboard").json()
+    assert result["active_visitors"] == 2
+    assert result["active_window_seconds"] == 120
+    assert result["requests_today"] == before
+
+
+def test_presence_heartbeat_is_public_but_rejects_foreign_origin(environment):
+    client, _ = environment
+    assert (
+        client.post(
+            "/api/presence/heartbeat", headers={"Origin": "https://attacker.example"}
+        ).status_code
+        == 403
+    )
+    assert client.app.state.visitor_presence.snapshot()["active_visitors"] == 0
+
+    # This path must work without opening or writing the application database.
+    def no_database():
+        raise AssertionError("Heartbeat must not access SQLite")
+
+    client.app.dependency_overrides[get_db] = no_database
+    assert client.post("/api/presence/heartbeat").status_code == 204
+    assert client.app.state.visitor_presence.snapshot()["active_visitors"] == 1
+
+
 def test_qr_is_public_and_configurable(environment, monkeypatch):
     client, _ = environment
     assert client.get("/api/share").json()["url"] == "http://testserver/"

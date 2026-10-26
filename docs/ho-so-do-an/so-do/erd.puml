@@ -1,0 +1,62 @@
+@startuml
+entity locations {
+ * id : integer <<PK>>
+ --
+ name : varchar(255)
+ description_source : text nullable
+ latitude : float nullable
+ longitude : float nullable
+ radius : float default 80
+ source : varchar(32)
+ source_lang : varchar(8) nullable
+ source_title : varchar(255) nullable
+ source_page_id : integer nullable
+ source_url : text nullable
+ last_synced_at : datetime nullable
+ is_ready : boolean
+}
+entity poi_narrations {
+ * id : integer <<PK>>
+ location_id : integer <<FK>>
+ language : varchar(8)
+ title : varchar(255)
+ content : text
+}
+entity admin_users {
+ * id : integer <<PK>>
+ username : varchar(80) <<UNIQUE>>
+ password_hash : text
+}
+entity admin_sessions {
+ * token_hash : varchar(64) <<PK>>
+ user_id : integer <<FK>>
+ csrf_token : varchar(80)
+ expires_at : datetime
+}
+entity activity_events {
+ * id : integer <<PK>>
+ created_at : datetime
+ actor : varchar(80)
+ action : varchar(80)
+ target : varchar(255)
+ status : varchar(40)
+}
+entity app_settings {
+ * key : varchar(80) <<PK>>
+ value : varchar(255)
+}
+entity narration_cache {
+ * id : integer <<PK>>
+ page_title : varchar(255)
+ language : varchar(8)
+ extract : text
+ source_url : text nullable
+ created_at : datetime
+ expires_at : datetime
+}
+locations ||--o{ poi_narrations : location_id
+admin_users ||--o{ admin_sessions : user_id
+note bottom of poi_narrations : UNIQUE (location_id, language)
+ON DELETE CASCADE theo location
+note bottom of admin_sessions : ON DELETE CASCADE theo admin_users
+@enduml

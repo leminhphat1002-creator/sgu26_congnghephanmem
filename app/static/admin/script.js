@@ -6,6 +6,8 @@ let locations = [];
 let editingId = null;
 let narrationRows = [];
 let contentVersion = 0;
+let presenceTimer = null;
+let presencePending = false;
 const languageNames = { vi: "Tiếng Việt", en: "English", ja: "日本語" };
 const actionNames = { login: "Đăng nhập", logout: "Đăng xuất", create_location: "Thêm địa điểm",
     update_location: "Sửa địa điểm", delete_location: "Xóa địa điểm", save_narration: "Lưu thuyết minh",
@@ -18,6 +20,8 @@ function notify(message, error = false) {
 }
 
 function showLogin() {
+    clearInterval(presenceTimer);
+    presenceTimer = null;
     csrfToken = "";
     $("adminView").hidden = true;
     $("loginView").hidden = false;
@@ -48,7 +52,45 @@ async function enterAdmin(identity) {
     $("adminView").hidden = false;
     await refresh();
     await loadQr();
+    startPresencePolling();
 }
+
+function updatePresence(data) {
+    const count = $("activeVisitorsCount");
+    if (!count) return;
+    count.textContent = String(data.active_visitors);
+    $("activeVisitorsNote").textContent = "Trình duyệt khách · 2 phút gần nhất";
+}
+
+async function refreshPresence() {
+    if (presencePending || $("adminView").hidden || document.visibilityState !== "visible") return;
+    presencePending = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+        updatePresence(await api("/api/admin/presence", { signal: controller.signal }));
+    } catch {
+        if ($("activeVisitorsCount")) {
+            $("activeVisitorsCount").textContent = "—";
+            $("activeVisitorsNote").textContent = "Chưa cập nhật được · sẽ tự thử lại";
+        }
+    } finally {
+        clearTimeout(timeout);
+        presencePending = false;
+    }
+}
+
+function startPresencePolling() {
+    clearInterval(presenceTimer);
+    presenceTimer = setInterval(() => { void refreshPresence(); }, 15000);
+    void refreshPresence();
+}
+
+document.addEventListener("visibilitychange", () => { void refreshPresence(); });
+window.addEventListener("pagehide", () => { clearInterval(presenceTimer); });
+window.addEventListener("pageshow", () => {
+    if (csrfToken && !$("adminView").hidden) startPresencePolling();
+});
 
 $("loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -99,6 +141,7 @@ function element(tag, text, className) {
 function drawDashboard(data) {
     $("stats").replaceChildren();
     const stats = [
+        ["KHÁCH ĐANG HOẠT ĐỘNG", data.active_visitors, "Trình duyệt khách · 2 phút gần nhất"],
         ["TỔNG ĐỊA ĐIỂM", data.locations, `${data.published} địa điểm có nội dung hiển thị`],
         ["BẢN THUYẾT MINH", data.narrations, "Nội dung biên soạn trong SQLite"],
         ["YÊU CẦU HÔM NAY", data.requests_today, "Yêu cầu thuyết minh · GMT+7"],
@@ -107,6 +150,11 @@ function drawDashboard(data) {
     for (const [label, count, note] of stats) {
         const card = element("article", null, "stat");
         card.append(element("div", label, "stat-label"), element("div", String(count), "stat-number"), element("div", note, "stat-note"));
+        if (label === "KHÁCH ĐANG HOẠT ĐỘNG") {
+            card.querySelector(".stat-number").id = "activeVisitorsCount";
+            card.querySelector(".stat-note").id = "activeVisitorsNote";
+            card.title = "Tự cập nhật mỗi 15 giây. Nhiều tab cùng trình duyệt được gộp; tab nền hoặc đã đóng sẽ hết hạn sau 2 phút không có tín hiệu.";
+        }
         $("stats").append(card);
     }
     $("usageChart").replaceChildren();

@@ -22,5 +22,6 @@ local.settings.json
 .idea/
 .vscode/
 .DS_Store
+~$*.docx
 audio_cache/
 tts_models/

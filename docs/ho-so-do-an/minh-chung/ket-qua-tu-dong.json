@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-26",
+  "commit": "2ef18dec8d7658c5a9a11ca0d0d59ace4befbb91",
+  "scope": "Local checks only. Not a statement about latest GitHub Actions or mobile acceptance.",
+  "python": {
+    "version": "3.12.7",
+    "architecture": "AMD64",
+    "logical_cpus": 16,
+    "ram_gib": 15.7
+  },
+  "pytest": {
+    "passed": 211,
+    "failed_or_errors": 0,
+    "skipped": 1,
+    "deprecation_warnings": 2
+  },
+  "javascript": {
+    "command": "node --test tests/frontend/i18n.test.cjs",
+    "node_version": "24.19.0",
+    "ci_node_version": "22",
+    "passed": 7,
+    "failed": 0
+  },
+  "ruff_check": "passed",
+  "ruff_format": {
+    "status": "passed",
+    "files": 99
+  },
+  "offline_tts": {
+    "method": "fresh temporary cache and socket connections blocked; one sample phrase per language",
+    "results": [
+      {
+        "language": "vi",
+        "first_seconds": 9.83,
+        "bytes": 29466
+      },
+      {
+        "language": "en",
+        "first_seconds": 7.63,
+        "bytes": 39497
+      },
+      {
+        "language": "ja",
+        "first_seconds": 6.63,
+        "bytes": 41586
+      }
+    ],
+    "perceptual_quality": "not evaluated by this check"
+  },
+  "manual_acceptance": "Not executed as a complete suite; see TC01 to TC38",
+  "load_benchmark_p95": "not executed",
+  "production_deployment": "not verified"
+}

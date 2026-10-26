@@ -1,0 +1,28 @@
+@startuml
+actor Khach
+participant "Giao diện" as UI
+participant "API Narration" as API
+participant "NarrationService ContentService" as Content
+participant "OfflineSpeech AudioStore" as Speech
+Khach -> UI : Chọn địa điểm
+UI -> API : GET /text?language=vi
+API -> Content : narrate_location(include_audio=False)
+Content --> API : text content_language fallback_used
+API --> UI : text và stream_url có version SHA256
+Khach -> UI : Nhấn Play
+UI -> API : GET /speech?language=vi&version=hash
+API -> Content : Đọc bài hiện tại và kiểm tra version
+alt version cũ
+ API --> UI : 409 tải lại bài
+else bài hợp lệ
+ API -> Speech : cache_key(text, content_language, model)
+ alt MP3 đã có
+  Speech --> API : FileResponse MP3 hỗ trợ Range
+ else MP3 chưa có
+  Speech --> API : Stream các đoạn MP3 từ Piper
+  Speech -> Speech : Chỉ lưu cache sau khi tạo hoàn tất
+ end
+ API --> UI : audio/mpeg
+ UI --> Khach : Phát âm thanh
+end
+@enduml

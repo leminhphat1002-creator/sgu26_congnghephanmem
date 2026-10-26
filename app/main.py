@@ -18,6 +18,8 @@ from app.modules.audio.api import router as audio_router
 from app.modules.content.api import router as content_router
 from app.modules.narration.api import router as narration_router
 from app.modules.poi.api import router as poi_router
+from app.modules.presence.api import router as presence_router
+from app.modules.presence.service import VisitorPresence
 from app.modules.sharing.api import router as sharing_router
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -35,6 +37,7 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
+    app.state.visitor_presence = VisitorPresence()
 
     # Đăng ký các API hiện có.
     app.include_router(health_router)
@@ -44,6 +47,7 @@ def create_app() -> FastAPI:
     app.include_router(narration_router)
     app.include_router(admin_router)
     app.include_router(sharing_router)
+    app.include_router(presence_router)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):

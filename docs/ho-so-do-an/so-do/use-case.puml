@@ -1,0 +1,27 @@
+@startuml
+left to right direction
+actor "Khách" as Visitor
+actor "Quản lý" as Manager
+rectangle "Bát Tràng Audio Guide" {
+ usecase "UC01 Chọn ngôn ngữ" as UC01
+ usecase "UC02 Khám phá và tìm kiếm" as UC02
+ usecase "UC03 GPS và vị trí mẫu" as UC03
+ usecase "UC04 Đọc và nghe" as UC04
+ usecase "UC05 Truy cập bằng QR" as UC05
+ usecase "UC06 Đăng nhập và đăng xuất" as UC06
+ usecase "UC07 Quản lý địa điểm" as UC07
+ usecase "UC08 Biên tập thuyết minh" as UC08
+ usecase "UC09 Xem dashboard" as UC09
+}
+Visitor -- UC01
+Visitor -- UC02
+Visitor -- UC03
+Visitor -- UC04
+Visitor -- UC05
+Manager -- UC06
+Manager -- UC07
+Manager -- UC08
+Manager -- UC09
+note bottom of UC07 : UC07 UC08 UC09 có tiền điều kiện
+phiên quản lý còn hiệu lực
+@enduml

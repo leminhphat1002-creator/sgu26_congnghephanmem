@@ -1,234 +1,291 @@
 # Bát Tràng Audio Guide
 
-Ứng dụng thuyết minh đa ngôn ngữ dùng FastAPI, SQLite, GPS và Piper TTS cục bộ.
-Giữ kiến trúc modular monolith 3 lớp: API/schema → service → repository/client/store.
+Đồ án môn Công nghệ phần mềm: website giúp khách khám phá làng gốm Bát Tràng,
+chọn địa điểm trên bản đồ và nghe thuyết minh bằng tiếng Việt, Anh hoặc Nhật.
+Khách tham quan không cần tài khoản; người quản lý đăng nhập để biên tập dữ liệu.
 
-## Chức năng
+Ứng dụng dùng **FastAPI, SQLAlchemy, SQLite, Leaflet và Piper TTS cục bộ**.
+Môi trường phát triển, CI và bộ triển khai đều dành cho **Windows, Python 3.12 x64**.
 
-- **Ngôn ngữ cho khách:** lần đầu mở trang sẽ hỏi quốc gia/khu vực (tùy chọn)
-  và ngôn ngữ Việt/Anh/Nhật. Đổi cả giao diện và thuyết minh, ghi nhớ riêng
-  trên trình duyệt; nút Language ở đầu trang cho phép đổi lại. Xem [chi tiết](docs/visitor-language.md).
-- **Khám phá từ xa:** xem danh sách và chọn nghe mà không cần cấp GPS.
-- **Bản đồ tương tác:** chọn điểm đánh dấu ở Bát Tràng để tải thuyết minh; lựa chọn đồng bộ
-  với danh sách và ngôn ngữ Việt/Anh/Nhật. Có nút xem tất cả điểm và liên kết tới bài đã chọn.
-- Tìm tên địa điểm có/không dấu, lọc chung trên bản đồ và danh sách. Chọn điểm sẽ hiện ngay
-  khung bài đang tải; đổi ngôn ngữ tự tải bản mới cho chính điểm đó. Bấm lại cùng điểm/ngôn
-  ngữ không gửi thêm yêu cầu hoặc đặt lại MP3; có nút thử lại nếu tải lỗi/chưa có âm thanh.
-  Nút Xem tất cả điểm bỏ bộ lọc, mở toàn bộ catalog Bát Tràng và căn lại bản đồ, kể cả khi
-  vị trí tìm kiếm hiện tại không có điểm nào.
-- Cập nhật vị trí giữ bài và âm thanh nếu điểm còn trong kết quả, cập nhật khoảng cách,
-  gợi ý điểm gần nhất trong danh sách. Không tự chọn điểm hoặc tự phát âm thanh.
-- **Tham quan tại chỗ:** tìm địa điểm đã lưu trong bán kính 500 m, gần nhất trước.
-- **Vị trí mẫu:** mô phỏng tọa độ tại Bát Tràng, hiển thị rõ khác với GPS thiết bị.
-- Nội dung Việt, Anh, Nhật lưu lâu dài trong `poi_narrations`, khóa theo địa điểm/ngôn ngữ.
-- Thiếu bản ngôn ngữ yêu cầu: thử tiếng Anh rồi tiếng Việt, thông báo bản thay thế.
-- Piper tạo giọng đọc cục bộ và cache; văn bản hiển thị ngay. Người dùng nhấn Play để nghe.
+## Chức năng chính
 
-Luồng sử dụng mới không gọi Wikipedia để tìm POI hoặc lấy nội dung. Client Wikimedia cũ
-và các API quản lý cache cũ được giữ để tham khảo/tương thích; không tham gia luồng thuyết minh.
-Xóa cache cũ không xóa các bài biên soạn trong `poi_narrations`.
+| Dành cho | Chức năng |
+| --- | --- |
+| Khách tham quan | Chọn quốc gia/khu vực tùy chọn và ngôn ngữ Việt/Anh/Nhật; ghi nhớ lựa chọn trên trình duyệt |
+| Khách tham quan | Tìm địa điểm có/không dấu, chọn trên danh sách hoặc bản đồ, khám phá từ xa không cần GPS |
+| Khách tham quan | Cấp quyền GPS để tìm điểm trong bán kính 500 m, hoặc dùng vị trí mẫu được ghi rõ |
+| Khách tham quan | Đọc nội dung từ database, nhấn Play để nghe giọng đọc cục bộ; không tự phát âm thanh |
+| Khách tham quan | Quét mã QR để mở website trên điện thoại |
+| Người quản lý | Thêm/sửa/xóa địa điểm, cập nhật tọa độ và bật/tắt trạng thái hiển thị |
+| Người quản lý | Biên tập riêng từng bài Việt/Anh/Nhật, tối đa 900 ký tự mỗi bài |
+| Người quản lý | Xem dashboard: địa điểm, nội dung, yêu cầu thuyết minh, cache MP3 và lịch sử thao tác |
+| Người quản lý | Xem khách đang hoạt động trong 2 phút gần nhất, tự cập nhật mỗi 15 giây |
 
-## Chạy local (PowerShell)
+Bộ dữ liệu mẫu có **5 địa điểm và 15 bài thuyết minh**: chợ gốm, đình làng, lò bầu cổ,
+Bảo tàng Gốm và chùa Kim Trúc. Nguồn được ghi trong
+[tệp nội dung](scripts/content/bat_trang_narrations.json) và
+[hồ sơ xác minh](docs/bat-trang-data.md). Tọa độ là tham khảo từ nguồn trực tuyến,
+chưa khảo sát thực địa hoặc xác nhận lối vào. Bản dịch cần rà soát trước khi sử dụng chính thức.
 
-**Máy hiện tại đã cài xong:** xem [cách chạy Windows thống nhất](docs/local-windows.md).
-Tạo `local.settings.json` từ bản example một lần, rồi dùng:
+## Chạy lại trên máy đã cài đặt
+
+Mở PowerShell tại thư mục repo. Chỉ tạo cấu hình nếu chưa có:
 
 ```powershell
+if (-not (Test-Path -LiteralPath .\local.settings.json)) {
+    Copy-Item -LiteralPath .\local.settings.example.json -Destination .\local.settings.json
+}
 .\scripts\run_local.ps1 -CheckOnly
 .\scripts\run_local.ps1
 ```
 
-Mở http://localhost:8010. Launcher tự chọn venv Python 3.12 x64, kiểm tra database
-và ba mô hình giọng đọc; cấu hình dữ liệu/QR được lưu riêng và không commit.
-Chưa tạo link Internet ở bước này. Hướng dẫn dưới đây dành cho cài mới/thao tác thủ công.
-
-Khuyến nghị Python 3.12 x64. Máy phát triển, CI và đích triển khai đều dùng Windows;
-không cần Docker, WSL hoặc Bash.
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python -m scripts.setup_offline_tts
-.\.venv\Scripts\python -m alembic upgrade head
-.\.venv\Scripts\python -m scripts.seed_bat_trang
-.\.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
-```
-
-Mở http://localhost:8000, API docs tại `/docs`, health check tại `/health`.
-Ứng dụng đọc biến môi trường của process; không tự nạp `.env` khi chạy uvicorn.
-Ví dụ đổi database: `$env:DATABASE_URL = "sqlite:///./data/demo.db"` trước các lệnh trên.
-Không cần cấu hình Wikimedia cho ứng dụng mới.
-
-Migration mới chỉ thêm bảng, không sửa migration cũ hoặc xóa dữ liệu hiện có.
-Seed chạy lặp không tạo trùng và không ghi đè bài đã biên tập. Dữ liệu đang sử dụng chỉ giữ các điểm Bát Tràng;
-catalog từ xa liệt kê địa điểm sẵn sàng có bài trong `poi_narrations`.
-
-**Nội dung Bát Tràng:** 5 điểm, 15 bài biên soạn bằng tiếng Việt, Anh và Nhật, có nguồn
-tham khảo cho từng điểm trong [tệp nội dung](scripts/content/bat_trang_narrations.json).
-Bài viết phục vụ đồ án, không phải nội dung chính thức của đơn vị quản lý di tích.
-Catalog gồm chợ gốm, đình làng, lò bầu cổ, Bảo tàng Gốm và chùa Kim Trúc.
-Tên và vị trí đã đối chiếu từ nguồn trực tuyến; tọa độ là tham khảo, chưa khảo sát
-thực địa hoặc xác nhận lối vào. Xem [hồ sơ xác minh và tọa độ](docs/bat-trang-data.md).
-
-Để đưa bài mới vào DB cũ, chạy lại `python -m scripts.seed_bat_trang`.
-Lệnh tạo bản sao SQLite trong `data/backups/`, thêm bài còn thiếu và chỉ thay những bài
-khớp hoàn toàn với bản mẫu đã phát hành (kiểm tra cả tiêu đề và nội dung). Tọa độ cũ
-chỉ được nâng cấp khi cả cặp vĩ độ/kinh độ khớp đúng mẫu; chỉnh sửa riêng được giữ lại.
-Các ID địa điểm, tài khoản và phiên quản trị được giữ lại. Nếu điểm chủ đề trải nghiệm
-cũ đã được biên tập, lệnh dừng để tránh đổi nhầm nội dung đó thành chùa Kim Trúc.
-Bản sao DB không được commit.
-Sửa bài đang sử dụng tại trang quản lý; sửa tệp JSON nếu muốn đổi nội dung cho DB mới.
-Nguồn được kiểm tra ngày 25/10/2026; bản dịch cần được rà soát trước khi dùng chính thức.
-
-## API chính
-
-Trang người dùng lấy văn bản ngay, sau đó nhấn Play để nghe **Piper chạy trên CPU máy chủ**.
-Âm thanh được gửi từng đoạn khi tạo ra, không chờ tạo toàn bài hoặc gọi dịch vụ giọng đọc
-qua Internet. Bài hoàn tất được lưu để lần sau phát từ file; bài sửa có khóa cache mới.
-Chỉ tự tải mô hình trong lệnh setup, không tải khi khách truy cập. Mô hình khoảng 204 MB,
-được ghim revision và SHA-256 trong `app/modules/audio/offline_voices.json`.
-
-Chạy `python -m scripts.check_offline_tts` để thử cả ba ngôn ngữ với socket bị chặn và cache
-trống. Trước buổi demo, chạy `python -m scripts.prepare_narration_audio` để tạo trước toàn bộ
-bài đang dùng. Giọng thiết bị vẫn là lựa chọn phụ nếu máy có giọng đúng ngôn ngữ. Giọng đọc
-cục bộ có âm sắc khác Edge TTS; máy chủ phải hoạt động và cài đủ mô hình/thư viện.
-
-CI/CD Windows tải và kiểm tra mô hình lúc build, đóng gói mô hình cùng dependency wheels;
-smoke test của ZIP kiểm tra tạo giọng khi bị chặn mạng. File mô hình và MP3 không commit.
-Có thể đổi thư mục mô hình bằng `PIPER_MODEL_DIR` và `setup_offline_tts --directory ...`.
-Thông tin nguồn và giấy phép ở [docs/offline-tts.md](docs/offline-tts.md).
-
-| API | Mục đích |
+| Trang | Địa chỉ mặc định |
 | --- | --- |
-| `GET /narration/catalog` | Danh sách có bài thuyết minh, không cần GPS |
-| `GET /narration/locations/{id}/text?language=vi` | Bài viết trả ngay từ DB, không gọi TTS |
-| `GET /narration/locations/{id}/speech?language=vi` | Phát từng đoạn từ Piper cục bộ; file cache hỗ trợ tua |
-| `GET /narration/nearby?latitude=...&longitude=...` | POI SQLite trong 500 m |
-| `POST /narration/locations/{id}?language=vi` | Thuyết minh theo lựa chọn, không cần GPS |
-| `POST /narration/detect` | Chọn POI trong bán kính kích hoạt (mặc định 80 m) |
-| `GET /content?title=...&lang=vi` | Đọc nội dung SQLite theo tên |
-| `GET /locations` | Quản lý/danh sách địa điểm hiện có |
-| `GET /audio/{filename}` | Phát MP3 đã tạo |
+| Khách tham quan | <http://localhost:8010/> |
+| Quản lý | <http://localhost:8010/admin> |
+| Mã QR | <http://localhost:8010/share> |
+| Tài liệu API | <http://localhost:8010/docs> |
+| Kiểm tra tiến trình | <http://localhost:8010/health> |
 
-GPS thiết bị cần quyền vị trí và HTTPS hoặc localhost. Chế độ mô phỏng không giả mạo GPS
-thiết bị. Đọc và tạo giọng mới không cần Internet sau khi setup. Máy khách vẫn cần kết nối
-tới máy chủ. Các API POST tạo MP3 cũ dùng Edge TTS được giữ để tương thích, không dùng trong
-luồng nghe mới của trang người dùng.
+Giữ terminal mở khi sử dụng; **Ctrl+C** dừng website. Nếu cổng đang được dùng,
+quay lại terminal chạy app cũ hoặc chọn cổng khác, ví dụ `-Port 8012`.
+Launcher không tự dừng tiến trình có sẵn.
 
-Bản đồ dùng Leaflet 1.9.4 lưu cục bộ ở `app/static/vendor/leaflet`, kèm giấy phép BSD-2-Clause;
-không tải thư viện JavaScript từ CDN lúc mở trang. Nền OpenStreetMap cần Internet và giữ
-attribution trên bản đồ. Không tải trước hoặc lưu offline hàng loạt các ô bản đồ. Khi nền
-bản đồ lỗi, vẫn chọn được marker hoặc dùng danh sách. Điểm thiếu tọa độ không có marker
-nhưng vẫn chọn được trong danh sách. Chỉ vẽ các điểm của catalog/phạm vi tìm kiếm hiện tại;
-không tự xin quyền GPS hoặc tra cứu địa điểm từ bên thứ ba.
-Tham khảo [Leaflet](https://leafletjs.com/examples/quick-start/) và
-[OpenStreetMap tile policy](https://operations.osmfoundation.org/policies/tiles/).
+Launcher ưu tiên `.venv\py312\Scripts\python.exe`, sau đó `.venv\Scripts\python.exe`;
+chỉ nhận Python 3.12 x64. Không cần activate venv. `-CheckOnly` kiểm tra cấu hình,
+database và mô hình giọng đọc; không khởi động server hoặc kiểm tra cổng.
+Xem thêm [hướng dẫn Windows](docs/local-windows.md).
 
-## Kiểm thử và CI
+### Mở trên điện thoại và tạo link Internet
+
+Để tạo link HTTPS demo và QR tương ứng:
 
 ```powershell
-.\.venv\Scripts\python -m pytest --cov=app --cov-report=term-missing
-.\.venv\Scripts\python -m ruff check .
-.\.venv\Scripts\python -m ruff format --check .
+.\scripts\run_local.ps1 -PublicDemo
 ```
 
-CI dùng runner Windows, PowerShell, Ruff, pytest/coverage và PostgreSQL native.
-Build tạo ZIP gồm source và dependency wheels; smoke test cài offline vào venv mới rồi
-chạy app Windows thật. CD bàn giao đúng ZIP đã qua CI, có thể triển khai qua Windows
-OpenSSH đến service Windows khi bật `DEPLOY_ENABLED`. Chưa có máy chủ đích được kết nối.
-Chi tiết artifact, service, secrets và phục hồi tại [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-Demo không thuê server bằng máy Windows tại [docs/FREE_HOSTING.md](docs/FREE_HOSTING.md).
-Tạo link HTTPS demo và QR tự động trên Windows: `.\scripts\run_local.ps1 -PublicDemo`.
-App demo dùng cổng 8011, chạy cùng Cloudflare Quick Tunnel; máy và terminal phải giữ
-hoạt động, URL thay đổi mỗi lần tạo tunnel. Không cần tài khoản Cloudflare/tên miền.
-SQLite dùng cho local và triển khai Windows mặc định; PostgreSQL vẫn được hỗ trợ tùy chọn.
-Test dùng database tạm và giả lập TTS. Job PostgreSQL kiểm tra DB native trên GitHub.
+Mở địa chỉ **QR page** được in trong terminal và quét mã mới. Chế độ này chạy app
+riêng trên cổng **8011**, cùng Cloudflare Quick Tunnel; lần đầu tải công cụ tunnel
+đã ghim phiên bản và xác minh SHA-256. Nếu cổng bận, dùng `-PublicDemo -Port 8012`.
 
-## Gói phát hành Windows
+**Máy tính, kết nối Internet và terminal phải duy trì hoạt động.** Khi tắt máy rồi
+chạy lại, tunnel cấp URL mới; dùng QR mới. Link demo không phải tên miền cố định
+hoặc hosting độc lập. Ctrl+C dừng app và tunnel do lệnh này tạo.
 
-Tải `windows-release-<SHA>` từ **Actions → CD → Artifacts** sau khi CI thành công.
-Gói `bat-trang-windows.zip` chạy với Python 3.12 x64 trên Windows, kèm manifest SHA256
-và wheelhouse để cài offline. Không có Docker image hoặc bước phát hành GHCR.
-Database/MP3 được lưu ngoài thư mục release trên máy đích. Dùng WinSW để chạy app như
-Windows service; script chỉ cài khi bạn chủ động chạy theo tài liệu triển khai.
-Không commit `.env`, database, MP3, môi trường ảo hoặc file mật khẩu. Mã và seed có thể commit.
+Nếu chỉ dùng cùng Wi-Fi, chạy `.\scripts\run_lan.ps1` và mở `/share` theo địa chỉ
+LAN được in ra. Script không thay đổi firewall. Không dùng QR trỏ về `localhost`
+trên điện thoại. GPS trên điện thoại cần HTTPS và quyền vị trí; HTTP LAN vẫn dùng
+được chế độ khám phá từ xa. Xem [hướng dẫn demo](docs/FREE_HOSTING.md).
 
-## Quản trị và mã QR
-
-Khách vào trang `/` hoặc quét QR để khám phá, không cần đăng nhập. Trang `/admin` dành
-cho người quản lý; các API thêm/sửa/xóa địa điểm, nội dung và xóa cache yêu cầu phiên
-quản trị cùng token CSRF. Không có tài khoản/mật khẩu mặc định được đưa vào source code.
-
-Sau khi cài dependencies và chạy migration, tạo tài khoản:
+### Chuẩn bị âm thanh trước buổi demo
 
 ```powershell
-.\.venv\Scripts\python -m scripts.create_admin --username admin --generate
+.\scripts\run_local.ps1 -PrepareAudio
 ```
 
-Lệnh tạo mật khẩu ngẫu nhiên trong `data/admin-login.txt` (Git bỏ qua). Mở file để lấy
-thông tin đăng nhập. Có thể tự đặt mật khẩu qua prompt ẩn bằng cách bỏ `--generate`.
-Đổi mật khẩu qua `python -m scripts.create_admin --username admin --reset`; các phiên cũ
-sẽ bị thu hồi. Chỉ người có quyền chạy lệnh trên máy chủ mới tạo được tài khoản quản lý.
-Phiên có hạn 8 giờ, cookie HttpOnly/SameSite Strict, Secure khi dùng HTTPS. Mật khẩu trong DB
-được băm PBKDF2-SHA256 với salt riêng, 600.000 vòng; file chứa mật khẩu ban đầu chỉ dành cho
-chủ máy, có thể xóa sau khi đã lưu mật khẩu ở nơi phù hợp.
+Lệnh tạo trước MP3 cho các bài đã xuất bản, bỏ qua bài đã có cache và không sửa database.
+Chạy trước buổi demo để giảm thời gian chờ lượt nghe đầu tiên.
 
-Dashboard có tổng địa điểm, số địa điểm có bài được hiển thị, số bài theo ngôn ngữ,
-lượt yêu cầu thuyết minh hôm nay và 7 ngày, dung lượng MP3, lịch sử thao tác. Lượt yêu cầu
-không đồng nghĩa số người nghe hoặc số lần phát hoàn tất. Mốc ngày dùng GMT+7.
-Thống kê bắt đầu từ khi thêm tính năng này, không suy đoán dữ liệu các lần dùng trước.
-Các sự kiện không lưu GPS, IP hoặc nội dung bài; bộ giới hạn đăng nhập dùng IP trong bộ nhớ
-một process (5 lần/phút), không phải cơ chế phân tán.
+## Cài đặt trên máy mới
 
-Mục **Địa điểm** cho phép thêm/sửa/xóa, bật/tắt hiển thị; mục **Thuyết minh** lưu riêng từng
-bản Việt/Anh/Nhật (tối đa 900 ký tự mỗi bài). Tên và mô tả được hiển thị dưới dạng văn bản,
-không thực thi HTML. Xóa địa điểm sẽ xóa các bài liên quan. Nội dung mới tạo khóa MP3 mới;
-các MP3 cũ có thể vẫn còn trong cache. AudioService dùng đúng thư mục `AUDIO_DIR`.
-
-### Quét QR từ điện thoại trên cùng mạng
+Cần Python **3.12 x64** và Internet để cài thư viện, tải mô hình. Tại thư mục repo:
 
 ```powershell
-.\scripts\run_lan.ps1
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m scripts.setup_offline_tts
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m scripts.seed_bat_trang
+.\.venv\Scripts\python.exe -m scripts.create_admin --username admin --generate
+if (-not (Test-Path -LiteralPath .\local.settings.json)) {
+    Copy-Item -LiteralPath .\local.settings.example.json -Destination .\local.settings.json
+}
+.\scripts\run_local.ps1 -CheckOnly
+.\scripts\run_local.ps1
 ```
 
-Script lấy địa chỉ LAN đang có default gateway, đặt `PUBLIC_BASE_URL`, rồi chạy server
-trên cổng 8010 và in địa chỉ. Giữ terminal mở. Điện thoại và máy chủ cần cùng Wi-Fi, cổng
-phải truy cập được theo cấu hình firewall hiện có. Script không thay đổi firewall.
-Trong trường hợp nhiều card mạng, chỉ định đường dẫn phù hợp:
+Mật khẩu được tạo trong `data/admin-login.txt`, không có tài khoản/mật khẩu mặc định
+trong source. Chỉ người có quyền chạy lệnh trên máy chủ mới tạo được tài khoản quản lý.
+
+Các lệnh khởi tạo dùng đường dẫn mặc định và biến môi trường của terminal; không tự
+đọc `local.settings.json`. Nếu dùng database hoặc thư mục mô hình riêng, đặt biến
+môi trường tương ứng trước khi khởi tạo. Xem [cấu hình chi tiết](docs/local-windows.md).
+Sao lưu database cũ trước khi chạy migration.
+
+## Database và quản lý dữ liệu
+
+Mặc định ứng dụng dùng **SQLite**, database là một file trên máy chạy website.
+Không cần cài một dịch vụ database riêng để chạy bản local/demo.
+
+| Đường dẫn mặc định | Nội dung |
+| --- | --- |
+| `data/app.db` | Địa điểm, bài thuyết minh, tài khoản, phiên đăng nhập và nhật ký hoạt động |
+| `audio_files/` | File MP3 đã tạo, lưu riêng ngoài database |
+| `tts_models/` | Mô hình giọng đọc Việt/Anh/Nhật |
+| `data/backups/` | Bản sao lưu database và bản sao do các công cụ dữ liệu tạo |
+| `data/logs/` | Log app/tunnel của chế độ demo công khai |
+| `local.settings.json` | Cấu hình riêng: cổng, database, thư mục âm thanh, mô hình và URL QR |
+
+Các đường dẫn này có thể đổi trong cấu hình. Launcher tính đường dẫn tương đối từ
+thư mục repo; thứ tự ưu tiên là mặc định → JSON → biến môi trường → tham số lệnh.
+Ứng dụng không tự nạp `.env`. Không commit cấu hình riêng, database, mật khẩu,
+MP3, mô hình giọng đọc hoặc môi trường ảo. Không xóa các thư mục dữ liệu khi cập nhật mã.
+
+### Chỉnh dữ liệu ở đâu?
+
+Đăng nhập `/admin`, dùng **Địa điểm** để quản lý thông tin và trạng thái hiển thị;
+dùng **Thuyết minh** để sửa từng bản ngôn ngữ. Địa điểm cần trạng thái sẵn sàng và
+ít nhất một bài để xuất hiện trong catalog. Xóa địa điểm sẽ xóa các bài liên quan.
+
+Các bảng chính gồm `locations`, `poi_narrations`, `admin_users`, `admin_sessions`,
+`activity_events`, `app_settings` và `narration_cache` (cache nội dung của luồng cũ).
+Trang admin hiện chưa có trình xem toàn bộ bảng, nút sao lưu hoặc nút dọn cache âm thanh.
+
+Seed chạy lại không tạo trùng địa điểm và giữ nội dung đã biên tập. Khi nâng cấp dữ
+liệu mẫu cũ, chỉ thay bài còn khớp hoàn toàn mẫu đã phát hành; có sao lưu SQLite
+trước khi nâng cấp. Sửa bài đang dùng tại `/admin`; sửa JSON để đổi dữ liệu seed.
+
+### Vì sao số MP3 có thể lớn hơn số bài?
+
+Chỉ số **ÂM THANH ĐÃ LƯU** trên dashboard đếm tất cả file `*.mp3` trong `AUDIO_DIR`,
+không phải số bài hiện tại. Khóa cache phụ thuộc văn bản, ngôn ngữ và giọng đọc.
+Sửa bài hoặc đổi giọng tạo khóa mới; file cũ có thể vẫn còn. Nghe lại cùng nội dung,
+ngôn ngữ và giọng dùng lại cache. Ví dụ 5 điểm × 3 ngôn ngữ có 15 bài, nhưng thư mục
+có thể chứa 45 MP3 do còn các phiên bản khác.
+
+Công cụ `cleanup_previous_project` là công cụ chuyển dữ liệu đồ án cũ, hiện chỉ
+nhận khóa giọng Edge khi xác định MP3 cần giữ. Chưa dùng chế độ `--apply` để dọn
+cache Piper hiện tại vì có thể xóa cả MP3 đang được sử dụng.
+
+### Sao lưu database và quản lý tài khoản
+
+Mở terminal khác tại thư mục repo. Chọn Python của môi trường đang dùng:
 
 ```powershell
-.\scripts\run_lan.ps1 -Port 8010 -PublicUrl "http://192.168.1.10:8010"
+$ProjectPython = if (Test-Path -LiteralPath .\.venv\py312\Scripts\python.exe) {
+    '.\.venv\py312\Scripts\python.exe'
+} else {
+    '.\.venv\Scripts\python.exe'
+}
+& $ProjectPython -m scripts.database_snapshot backup truoc-khi-chinh-sua-01.db
 ```
 
-Đây là liên kết trong mạng nội bộ; chưa phải triển khai Internet. GPS trên điện thoại
-cần HTTPS; khám phá từ xa và nghe theo lựa chọn vẫn dùng được trên HTTP LAN.
-Mở `/share` để xem, tải PNG hoặc in QR. SVG tại `/share/qr.svg`, PNG tại `/share/qr.png`.
-QR được tạo trên server, không chứa mật khẩu/tài khoản và không gửi link qua dịch vụ QR khác.
-Đổi IP hoặc tên miền cần tải lại QR; không in QR trỏ về `localhost` để dùng trên điện thoại.
+Bản sao nằm trong `data/backups/`; mỗi lần dùng tên mới vì công cụ từ chối ghi đè.
+Lệnh dùng SQLite backup API và kiểm tra tính toàn vẹn; không sao chép thô file DB
+đang ghi. Bản sao này chỉ chứa database, không gồm MP3, mô hình hoặc cấu hình.
+Nếu đổi `DATABASE_URL`, đặt biến môi trường tương ứng trước khi chạy các lệnh bảo trì;
+các lệnh này không tự đọc JSON của launcher.
 
-Khi có tên miền công khai, đặt `PUBLIC_BASE_URL=https://ten-mien-cua-ban` trong biến môi trường
-của server Windows và chạy qua HTTPS. `uvicorn` không tự nạp `.env`. Với Windows service,
-chỉnh `C:\BatTrang\settings.json` rồi restart service; tạo admin trên DB máy đích theo
-[hướng dẫn triển khai](docs/DEPLOYMENT.md).
-
-Tham khảo kỹ thuật: [qrcode](https://pypi.org/project/qrcode/8.2/),
-[OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
-
-
-## Dọn dữ liệu đồ án cũ
-
-`scripts/seed_poi.py` đã chuyển sang seed Bát Tràng, không thêm lại địa điểm TP.HCM.
-Database local đã dọn các địa điểm đồ án cũ, cache nội dung và MP3 không còn được dùng
-bởi bài thuyết minh hiện tại. Tài khoản, phiên quản trị và nội dung Bát Tràng được giữ nguyên.
-
-Để áp dụng cùng thao tác trên database cũ khác, xem trước rồi chạy:
+Đổi mật khẩu tài khoản đã có bằng prompt ẩn:
 
 ```powershell
-python -m scripts.cleanup_previous_project
-python -m scripts.cleanup_previous_project --apply
+& $ProjectPython -m scripts.create_admin --username admin --reset
 ```
 
-Script chỉ xóa danh sách địa điểm cũ đã nhận diện trong `LEGACY_NAMES`. Các file MP3
-có khóa hợp lệ nhưng không còn khớp nội dung hiện tại cũng được dọn. Trước khi xóa,
-script sao lưu DB và MP3 vào `data/backups/previous-project-...`, kèm `manifest.json`
-ghi đường dẫn gốc để phục hồi nếu cần. Bản sao lưu không được phục vụ trên website.
+Đổi mật khẩu thu hồi các phiên cũ. Mật khẩu trong database được băm PBKDF2-SHA256
+với salt riêng, 600.000 vòng. Phiên có hạn 8 giờ; cookie HttpOnly, SameSite Strict,
+Secure khi dùng HTTPS. API ghi dữ liệu yêu cầu phiên quản trị và token CSRF.
+
+Dashboard đếm **yêu cầu thuyết minh**, không phải số khách duy nhất hoặc lượt nghe
+hoàn tất; ngày thống kê dùng GMT+7. Bảng sự kiện không lưu tọa độ GPS, IP hoặc nội
+dung bài; access log của server có thể chứa tham số URL, gồm tọa độ khi gọi API GPS.
+
+Ô **KHÁCH ĐANG HOẠT ĐỘNG** đếm trình duyệt có tín hiệu trong 2 phút gần nhất.
+Trang khách đang hiển thị gửi tín hiệu mỗi 30 giây; nhiều tab dùng chung cookie
+được gộp. Đóng trang hoặc chuyển hết các tab khách xuống nền thì số giảm sau tối đa
+2 phút không có tín hiệu, hiển thị ở nhịp cập nhật dashboard kế tiếp. Đây là ước
+lượng theo trình duyệt, không xác minh từng người; trình duyệt/thiết bị khác tính
+riêng. Trang quản lý không tự tính là khách. Số liệu nằm trong RAM của một process,
+đặt lại khi restart; chưa hỗ trợ cộng gộp nhiều worker. Xem [chi tiết](docs/visitor-presence.md).
+
+## Kiến trúc và API
+
+Repo tổ chức theo modular monolith, tách API/schema, nghiệp vụ và truy cập dữ liệu.
+
+```text
+app/
+  core/                 Cấu hình, database, xác thực, lỗi dùng chung
+  modules/
+    poi/                Địa điểm và tọa độ
+    content/            Bài thuyết minh theo ngôn ngữ
+    narration/          Điều phối chọn điểm, văn bản và giọng đọc
+    audio/              Piper cục bộ, cache MP3 và luồng tương thích cũ
+    admin/              Tài khoản, biên tập, dashboard
+    sharing/            Link truy cập và mã QR
+  static/               Giao diện khách, quản lý, Leaflet và bản đồ cục bộ
+scripts/                Khởi tạo, chạy app, dữ liệu, giọng đọc và đóng gói
+migrations/             Migration Alembic
+tests/                 Kiểm thử backend và frontend
+deploy/                Triển khai và phục hồi Windows
+docs/                  Tài liệu kỹ thuật và hồ sơ đồ án
+```
+
+| API tiêu biểu | Mục đích |
+| --- | --- |
+| `GET /narration/catalog` | Catalog có nội dung, không cần GPS |
+| `GET /narration/nearby?latitude=...&longitude=...` | Tìm điểm trong bán kính 500 m |
+| `GET /narration/locations/{id}/text?language=vi` | Lấy bài từ database, không tạo âm thanh |
+| `GET /narration/locations/{id}/speech?language=vi` | Phát Piper hoặc MP3 đã lưu |
+| `GET /api/admin/dashboard` | Thống kê, yêu cầu đăng nhập quản lý |
+| `GET /share/qr.png` | QR mở trang khách theo URL hiện tại |
+
+Luồng khách hiện tại lấy văn bản trước, chỉ tạo/phát âm thanh khi nhấn Play. Bài
+thiếu ngôn ngữ yêu cầu sẽ thử tiếng Anh rồi tiếng Việt và thông báo bản thay thế.
+Piper chạy trên CPU máy chủ, gửi từng đoạn và chỉ lưu MP3 khi hoàn tất. Mô hình
+được ghim checksum; setup tải mô hình, khách truy cập không kích hoạt tải mô hình.
+Luồng cũ dùng Edge TTS/Wikimedia được giữ để tương thích, không phải luồng nghe mới.
+
+Leaflet và nền vector GeoJSON vùng Bát Tràng được đóng gói cục bộ; không cần gọi
+CDN hoặc máy chủ tile ngoài khi mở bản đồ. Giữ attribution nguồn trong giao diện.
+Sau setup, nội dung/bản đồ/giọng đọc cục bộ vẫn cần máy khách kết nối tới server.
+`/health` chỉ kiểm tra tiến trình phản hồi, không chứng minh DB và giọng đọc sẵn sàng.
+
+## Kiểm thử, CI/CD và triển khai
+
+Dùng `$ProjectPython` đã chọn ở phần bảo trì; frontend test cần Node.js (CI dùng Node 22):
+
+```powershell
+& $ProjectPython -m ruff check .
+& $ProjectPython -m ruff format --check .
+& $ProjectPython -m pytest --cov=app --cov-report=term-missing
+node --test tests/frontend/i18n.test.cjs
+node --test tests/frontend/presence.test.cjs
+node --test tests/frontend/admin-presence.test.cjs
+```
+
+Kiểm tra tạo giọng thực tế bằng `& $ProjectPython -m scripts.check_offline_tts`.
+Công cụ dùng cache tạm, chặn kết nối socket khi tạo giọng. Test PostgreSQL cần
+`TEST_POSTGRES_URL` trỏ đến database kiểm thử riêng; không dùng database đang vận hành.
+
+| Thành phần | Hành vi được cấu hình trong repo |
+| --- | --- |
+| [CI](.github/workflows/ci.yml) | Windows runner: Ruff, phân tích cú pháp PowerShell, pytest/coverage, frontend test, PostgreSQL native, build ZIP và smoke test gói thật |
+| [CD: delivery](.github/workflows/cd.yml) | Sau CI thành công trên `main`, kiểm tra SHA/checksum và bàn giao đúng ZIP đã kiểm thử |
+| CD: deploy-windows | Chỉ triển khai qua Windows OpenSSH khi `DEPLOY_ENABLED=true` và có cấu hình máy đích |
+| Demo hiện tại | App trên máy Windows cá nhân, link HTTPS tạm qua tunnel; chưa có máy chủ production độc lập được kết nối |
+
+Kết quả CI/CD phải xem tại **GitHub → Actions** theo commit tương ứng. Có workflow
+trong repo không đồng nghĩa lần chạy mới nhất đã thành công hoặc đã triển khai server.
+Gói bàn giao nằm tại **Actions → CD → Artifacts → `windows-release-<SHA>`**, gồm
+`bat-trang-windows.zip` và checksum; artifact có thời hạn lưu theo workflow.
+
+Bộ triển khai dùng Python 3.12 x64, dependency wheels, mô hình cục bộ và Windows
+service qua WinSW khi chủ động cài đặt. Database/MP3 được giữ ngoài thư mục release
+trên máy đích. Xem [triển khai Windows, secrets và rollback](docs/DEPLOYMENT.md).
+
+## Tài liệu đồ án
+
+| Tài liệu | Nội dung |
+| --- | --- |
+| [Bộ hồ sơ 5 file Word](docs/ho-so-do-an/README.md) | Đánh giá PRD, PRD hiệu chỉnh, phân tích thiết kế, kiểm thử và kịch bản demo |
+| [Chạy Windows](docs/local-windows.md) | Cài đặt, cấu hình và chạy lại |
+| [Demo HTTPS/LAN](docs/FREE_HOSTING.md) | Link Internet tạm, QR, yêu cầu duy trì máy |
+| [Dữ liệu Bát Tràng](docs/bat-trang-data.md) | Nguồn nội dung và giới hạn tọa độ |
+| [Ngôn ngữ khách](docs/visitor-language.md) | Chọn quốc gia, ngôn ngữ và nội dung thay thế |
+| [Bản đồ cục bộ](docs/local-map.md) | Nguồn GeoJSON, phạm vi và attribution |
+| [Giọng đọc cục bộ](docs/offline-tts.md) | Mô hình, giấy phép, setup và kiểm tra |
+| [Triển khai Windows](docs/DEPLOYMENT.md) | Artifact, service, cấu hình và phục hồi |
+
+Trước khi nộp, điền thông tin nhóm/giảng viên trong hồ sơ, thực hiện và ghi bằng
+chứng các ca nghiệm thu thủ công trên thiết bị thật, rồi kiểm tra Actions của commit
+được nộp. Các ca chưa làm và chỉ tiêu hiệu năng chưa đo phải giữ đúng trạng thái đó.

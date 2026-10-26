@@ -1,0 +1,19 @@
+@startuml
+component "Giao diện khách Admin QR" as UI
+component "API Routers và xác thực" as API
+component "Narration Content POI AdminService" as Service
+component "OfflineSpeech Piper" as Speech
+component "Repositories AudioStore" as Data
+artifact "GeoJSON Leaflet models MP3" as Files
+database "SQLite hoặc PostgreSQL" as DB
+UI ..> API : HTTP JSON audio
+API ..> Service : nghiệp vụ
+API ..> Speech : GET speech
+Service ..> Data
+Speech ..> Data : AudioStore
+Data ..> DB : SQL
+Data ..> Files : tệp
+UI ..> Files : GeoJSON và thư viện qua static
+note right of API : Một số API CRUD đọc repository trực tiếp.
+Sơ đồ thể hiện phân nhóm chức năng.
+@enduml
