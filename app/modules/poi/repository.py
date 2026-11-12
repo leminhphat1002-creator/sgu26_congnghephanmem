@@ -4,9 +4,10 @@ Nơi duy nhất của poi chạm SQLite: CRUD Location và truy vấn ứng viê
 Model ORM nằm ở models.py cùng thư mục. (Viết ở Tuần 2.)
 """
 
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
+from app.modules.content.models import PoiNarration
 from app.modules.poi.models import Location
 
 
@@ -85,20 +86,19 @@ def find_in_bounding_box(
     max_latitude: float,
     min_longitude: float,
     max_longitude: float,
+    *,
+    narratable_only: bool = False,
 ) -> list[Location]:
     """Find GPS-enabled locations inside a bounding box."""
-    statement = (
-        select(Location)
-        .where(
-            Location.latitude.is_not(None),
-            Location.longitude.is_not(None),
-            Location.latitude >= min_latitude,
-            Location.latitude <= max_latitude,
-            Location.longitude >= min_longitude,
-            Location.longitude <= max_longitude,
-        )
-        .order_by(Location.id)
-    )
+    locations = _narratable_locations() if narratable_only else select(Location)
+    statement = locations.where(
+        Location.latitude.is_not(None),
+        Location.longitude.is_not(None),
+        Location.latitude >= min_latitude,
+        Location.latitude <= max_latitude,
+        Location.longitude >= min_longitude,
+        Location.longitude <= max_longitude,
+    ).order_by(Location.id)
     return list(session.scalars(statement).all())
 
 
@@ -116,15 +116,18 @@ def get_location_by_source_page(
     return session.scalars(statement).first()
 
 
-def list_narratable_locations(session: Session) -> list[Location]:
-    from app.modules.content.models import PoiNarration
-
-    statement = (
-        select(Location)
-        .where(
-            Location.is_ready.is_(True),
-            Location.id.in_(select(PoiNarration.location_id)),
-        )
-        .order_by(Location.id)
+def _narratable_locations() -> Select[tuple[Location]]:
+    return select(Location).where(
+        Location.is_ready.is_(True),
+        Location.id.in_(select(PoiNarration.location_id)),
     )
+
+
+def get_narratable_location(session: Session, location_id: int) -> Location | None:
+    statement = _narratable_locations().where(Location.id == location_id)
+    return session.scalar(statement)
+
+
+def list_narratable_locations(session: Session) -> list[Location]:
+    statement = _narratable_locations().order_by(Location.id)
     return list(session.scalars(statement))

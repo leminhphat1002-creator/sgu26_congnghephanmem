@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Quản lý · Bát Tràng Audio Guide</title>
     <link rel="stylesheet" href="/static/admin/style.css?v=20261026-presence1">
-    <script src="/static/admin/script.js?v=20261026-presence1" defer></script>
+    <script src="/static/admin/script.js?v=20261112-presence2" defer></script>
 </head>
 <body>
 <main id="loginView" class="login-layout">
@@ -29,6 +29,7 @@
             <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256">
             <p id="loginMessage" class="error" role="alert"></p>
             <button id="loginButton" class="primary" type="submit">Đăng nhập</button>
+            <button id="restoreSessionButton" class="secondary" type="button" hidden>Kiểm tra lại phiên</button>
             <p class="small muted">Tài khoản được chủ website cấp. Không mở đăng ký quản trị công khai.</p>
         </form>
     </section>
@@ -53,16 +54,28 @@
         <p id="adminMessage" class="notice" role="status" aria-live="polite" hidden></p>
 
         <section id="pane-overview" class="pane">
-            <div class="section-top"><div><h2>Nhịp hoạt động của website</h2><p class="muted">Dữ liệu thực tế từ địa điểm, nội dung và các yêu cầu thuyết minh.</p></div>
+            <div class="section-top"><div><h2>Nhịp hoạt động của website</h2><p class="muted">Số liệu về địa điểm, nội dung và yêu cầu phát thuyết minh.</p></div>
                 <button id="refreshButton" class="secondary" type="button">Làm mới</button></div>
-            <div id="stats" class="stats-grid"></div>
-            <div class="dashboard-grid">
-                <section class="panel"><div class="panel-heading"><h3>Lượt yêu cầu thuyết minh</h3><span class="pill">7 ngày · GMT+7</span></div>
-                    <p class="small muted">Đếm yêu cầu, không phải số người nghe hoặc lượt phát hoàn tất.</p><div id="usageChart" class="usage-chart"></div></section>
-                <section class="panel"><h3>Nội dung theo ngôn ngữ</h3><div id="languageStats"></div><p id="translationHint" class="small muted"></p></section>
+            <p id="dashboardError" class="notice error" role="status" hidden></p>
+            <div id="dashboardContent" hidden>
+                <div id="stats" class="stats-grid"></div>
+                <div class="dashboard-grid">
+                    <section class="panel"><div class="panel-heading"><h3>Lượt yêu cầu phát thuyết minh</h3><span class="pill">7 ngày · GMT+7</span></div>
+                        <p class="small muted">Thống kê yêu cầu âm thanh, kể cả yêu cầu chưa phát xong.</p><div id="usageChart" class="usage-chart"></div></section>
+                    <section class="panel"><h3>Nội dung theo ngôn ngữ</h3><div id="languageStats"></div><p id="translationHint" class="small muted"></p></section>
+                </div>
+                <section class="panel"><div class="panel-heading"><h3>Hoạt động quản lý gần đây</h3><span class="pill">15 thao tác mới nhất</span></div>
+                    <div class="table-wrap"><table><thead><tr><th>Thời gian</th><th>Tài khoản</th><th>Thao tác</th><th>Đối tượng</th></tr></thead><tbody id="activityBody"></tbody></table></div></section>
             </div>
-            <section class="panel"><div class="panel-heading"><h3>Hoạt động quản lý gần đây</h3><span class="pill">15 thao tác mới nhất</span></div>
-                <div class="table-wrap"><table><thead><tr><th>Thời gian</th><th>Tài khoản</th><th>Thao tác</th><th>Đối tượng</th></tr></thead><tbody id="activityBody"></tbody></table></div></section>
+            <section class="panel">
+                <div class="panel-heading"><h3>Phiên khách đang hoạt động</h3><span class="pill">Cập nhật mỗi 15 giây</span></div>
+                <p class="small muted">Mỗi dòng là một phiên trình duyệt. Vị trí gần đúng chỉ hiện khi khách chủ động chia sẻ.</p>
+                <p id="presenceStatus" class="small muted" role="status">Đang tải phiên khách…</p>
+                <div id="presenceTable" class="table-wrap" hidden>
+                    <table><thead><tr><th scope="col">Mã phiên</th><th scope="col">Tín hiệu gần nhất</th><th scope="col">Vị trí gần đúng</th></tr></thead>
+                    <tbody id="presenceBody"></tbody></table>
+                </div>
+            </section>
         </section>
 
         <section id="pane-locations" class="pane" hidden>

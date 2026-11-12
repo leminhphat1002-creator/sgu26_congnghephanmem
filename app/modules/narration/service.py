@@ -12,6 +12,8 @@ from app.core.exceptions import AppError
 from app.modules.audio.service import AudioService
 from app.modules.content.service import ContentService
 from app.modules.poi import repository as poi_repository
+from app.modules.poi.models import Location
+from app.modules.poi.schemas import LocationRead
 from app.modules.poi.service import (
     choose_activation,
     find_nearby,
@@ -202,6 +204,35 @@ class NarrationService:
         if not location.is_ready:
             raise ValueError("Địa điểm chưa sẵn sàng thuyết minh")
 
+        result = await self._location_narration(location, language)
+        if not include_audio or result["status"] == "no_content":
+            return result
+
+        try:
+            audio = await asyncio.wait_for(
+                self.audio_service.synthesize(text=result["text"], lang=result["content_language"]),
+                timeout=self.AUDIO_TIMEOUT_SECONDS,
+            )
+        except (TimeoutError, AppError) as exc:
+            logger.warning("Không thể tạo MP3 cho POI %s: %s", location_id, exc)
+            result["status"] = "text_only"
+            result["message"] = "Có văn bản nhưng chưa tạo được MP3."
+            return result
+
+        result["audio_url"] = f"/audio/{audio['audio_filename']}"
+        result["cache_hit"] = audio["cache_hit"]
+        return result
+
+    async def read_narration(self, location_id: int, language: str = "vi") -> dict[str, Any]:
+        """Lấy bài thuyết minh của một địa điểm đủ điều kiện công khai."""
+        if language not in ContentService.SUPPORTED_LANGUAGES:
+            raise ValueError("Ngôn ngữ không được hỗ trợ")
+        location = poi_repository.get_narratable_location(self.session, location_id)
+        if location is None:
+            raise ValueError("Không tìm thấy địa điểm")
+        return await self._location_narration(location, language)
+
+    async def _location_narration(self, location: Location, language: str) -> dict[str, Any]:
         result = {
             "location_id": location.id,
             "location_name": location.name,
@@ -215,7 +246,7 @@ class NarrationService:
                 timeout=self.CONTENT_TIMEOUT_SECONDS,
             )
         except (TimeoutError, AppError) as exc:
-            logger.warning("Không thể lấy nội dung POI %s: %s", location_id, exc)
+            logger.warning("Không thể lấy nội dung POI %s: %s", location.id, exc)
             content = None
 
         if content is None:
@@ -225,35 +256,17 @@ class NarrationService:
                 "message": "Không có nội dung thuyết minh.",
             }
 
-        text = content["extract"]
-        content_language = content["language"]
         result.update(
             status="success",
-            content_language=content_language,
+            content_language=content["language"],
             fallback_used=content.get("fallback_used", False),
-            text=text,
+            narration_title=content.get("title"),
+            text=content["extract"],
             audio_url=None,
             cache_hit=None,
             message="Đã tạo nội dung thuyết minh.",
         )
 
-        # Nội dung SQLite trả ngay; giao diện chuẩn bị giọng đọc ở yêu cầu riêng.
-        if not include_audio:
-            return result
-
-        try:
-            audio = await asyncio.wait_for(
-                self.audio_service.synthesize(text=text, lang=content_language),
-                timeout=self.AUDIO_TIMEOUT_SECONDS,
-            )
-        except (TimeoutError, AppError) as exc:
-            logger.warning("Không thể tạo MP3 cho POI %s: %s", location_id, exc)
-            result["status"] = "text_only"
-            result["message"] = "Có văn bản nhưng chưa tạo được MP3."
-            return result
-
-        result["audio_url"] = f"/audio/{audio['audio_filename']}"
-        result["cache_hit"] = audio["cache_hit"]
         return result
 
     async def discover_nearby_locations(
@@ -262,9 +275,9 @@ class NarrationService:
         longitude: float,
     ) -> list[dict[str, Any]]:
         """Tìm địa điểm sẵn sàng trong SQLite, không khám phá từ Internet."""
-        nearby = find_nearby(self.session, latitude, longitude, self.SEARCH_RADIUS_METERS)
-        from app.modules.poi.schemas import LocationRead
-
+        nearby = find_nearby(
+            self.session, latitude, longitude, self.SEARCH_RADIUS_METERS, narratable_only=True
+        )
         return [
             {
                 "location": LocationRead.model_validate(location).model_dump(),
@@ -272,12 +285,9 @@ class NarrationService:
                 "should_activate": choose_activation(distance, location.radius),
             }
             for location, distance in nearby
-            if location.is_ready
         ]
 
     def list_catalog(self) -> list[dict]:
-        from app.modules.poi.schemas import LocationRead
-
         return [
             {
                 "location": LocationRead.model_validate(location).model_dump(),

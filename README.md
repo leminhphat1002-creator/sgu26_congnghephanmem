@@ -18,7 +18,7 @@ Môi trường phát triển, CI và bộ triển khai đều dành cho **Window
 | Khách tham quan | Quét mã QR để mở website trên điện thoại |
 | Người quản lý | Thêm/sửa/xóa địa điểm, cập nhật tọa độ và bật/tắt trạng thái hiển thị |
 | Người quản lý | Biên tập riêng từng bài Việt/Anh/Nhật, tối đa 900 ký tự mỗi bài |
-| Người quản lý | Xem dashboard: địa điểm, nội dung, yêu cầu thuyết minh, cache MP3 và lịch sử thao tác |
+| Người quản lý | Xem dashboard: địa điểm, nội dung, yêu cầu phát thuyết minh, cache MP3 và lịch sử thao tác |
 | Người quản lý | Xem khách đang hoạt động trong 2 phút gần nhất, tự cập nhật mỗi 15 giây |
 
 Bộ dữ liệu mẫu có **5 địa điểm và 15 bài thuyết minh**: chợ gốm, đình làng, lò bầu cổ,
@@ -38,6 +38,10 @@ if (-not (Test-Path -LiteralPath .\local.settings.json)) {
 .\scripts\run_local.ps1 -CheckOnly
 .\scripts\run_local.ps1
 ```
+
+Nếu `-CheckOnly` báo database chưa cập nhật, sao lưu database đang dùng rồi chạy
+`& $ProjectPython -m alembic upgrade head` với đúng `DATABASE_URL`. Xem phần
+[sao lưu database](#sao-lưu-database-và-quản-lý-tài-khoản) để chọn đường dẫn Python.
 
 | Trang | Địa chỉ mặc định |
 | --- | --- |
@@ -186,8 +190,9 @@ các lệnh này không tự đọc JSON của launcher.
 với salt riêng, 600.000 vòng. Phiên có hạn 8 giờ; cookie HttpOnly, SameSite Strict,
 Secure khi dùng HTTPS. API ghi dữ liệu yêu cầu phiên quản trị và token CSRF.
 
-Dashboard đếm **yêu cầu thuyết minh**, không phải số khách duy nhất hoặc lượt nghe
-hoàn tất; ngày thống kê dùng GMT+7. Bảng sự kiện không lưu tọa độ GPS, IP hoặc nội
+Dashboard đếm **yêu cầu phát thuyết minh** khi khách bắt đầu phát hoặc chủ động
+phát lại. Mở bài, tiếp tục sau tạm dừng và tải lại một đoạn MP3 giữ nguyên số
+lượt. Chỉ số đo yêu cầu, ngày thống kê dùng GMT+7. Bảng sự kiện không lưu tọa độ GPS, IP hoặc nội
 dung bài; access log của server có thể chứa tham số URL, gồm tọa độ khi gọi API GPS.
 
 Ô **KHÁCH ĐANG HOẠT ĐỘNG** đếm trình duyệt có tín hiệu trong 2 phút gần nhất.
@@ -226,6 +231,7 @@ docs/                  Tài liệu kỹ thuật và hồ sơ đồ án
 | `GET /narration/nearby?latitude=...&longitude=...` | Tìm điểm trong bán kính 500 m |
 | `GET /narration/locations/{id}/text?language=vi` | Lấy bài từ database, không tạo âm thanh |
 | `GET /narration/locations/{id}/speech?language=vi` | Phát Piper hoặc MP3 đã lưu |
+| `POST /narration/locations/{id}/play` | Ghi lượt yêu cầu phát theo mã UUID của thao tác |
 | `GET /api/admin/dashboard` | Thống kê, yêu cầu đăng nhập quản lý |
 | `GET /share/qr.png` | QR mở trang khách theo URL hiện tại |
 
@@ -248,9 +254,7 @@ Dùng `$ProjectPython` đã chọn ở phần bảo trì; frontend test cần No
 & $ProjectPython -m ruff check .
 & $ProjectPython -m ruff format --check .
 & $ProjectPython -m pytest --cov=app --cov-report=term-missing
-node --test tests/frontend/i18n.test.cjs
-node --test tests/frontend/presence.test.cjs
-node --test tests/frontend/admin-presence.test.cjs
+node --test tests/frontend/*.test.cjs
 ```
 
 Kiểm tra tạo giọng thực tế bằng `& $ProjectPython -m scripts.check_offline_tts`.

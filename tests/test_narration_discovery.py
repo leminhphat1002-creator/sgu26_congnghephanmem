@@ -1,14 +1,17 @@
 """Khám phá POI chỉ đọc SQLite, không tạo địa điểm từ Internet."""
 
 import asyncio
+from math import degrees
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy.orm import Session
 
 from app.core.db import Base, create_db_engine
+from app.modules.content.models import PoiNarration
 from app.modules.narration.service import NarrationService
 from app.modules.poi.models import Location
+from app.modules.poi.service import EARTH_RADIUS_METERS
 
 
 @pytest.fixture
@@ -23,22 +26,40 @@ def environment(tmp_path):
     engine.dispose()
 
 
-def test_nearby_is_sorted_and_filters_unready(environment):
+def test_nearby_is_sorted_and_filters_unpublished_and_beyond_500_meters(environment):
     service, session, content = environment
-    session.add_all(
-        [
-            Location(name="Xa", latitude=20.980, longitude=105.9146, is_ready=True),
-            Location(name="Gần", latitude=20.9784, longitude=105.9146, is_ready=True),
-            Location(name="Ẩn", latitude=20.9784, longitude=105.9146, is_ready=False),
-            Location(name="Ngoài vùng", latitude=21.1, longitude=105.9146, is_ready=True),
+    latitude, longitude = 20.9784, 105.9146
+    locations = [
+        Location(
+            name=name,
+            latitude=latitude + degrees(distance / EARTH_RADIUS_METERS),
+            longitude=longitude,
+            is_ready=is_ready,
+        )
+        for name, distance, is_ready in [
+            ("Ngoài vùng", 501, True),
+            ("Ranh giới", 500, True),
+            ("Trong vùng", 499, True),
+            ("Gần", 0, True),
+            ("Ẩn", 0, False),
         ]
+    ]
+    session.add_all(locations)
+    session.flush()
+    session.add_all(
+        PoiNarration(
+            location_id=location.id, language="vi", title=location.name, content="Nội dung"
+        )
+        for location in locations
     )
+    session.add(Location(name="Chưa có bài", latitude=latitude, longitude=longitude, is_ready=True))
     session.commit()
-    result = asyncio.run(service.discover_nearby_locations(20.9784, 105.9146))
-    assert [item["location"]["name"] for item in result] == ["Gần", "Xa"]
+    result = asyncio.run(service.discover_nearby_locations(latitude, longitude))
+    assert [item["location"]["name"] for item in result] == ["Gần", "Trong vùng", "Ranh giới"]
+    assert [item["distance_meters"] for item in result] == [0, 499, 500]
     assert result[0]["should_activate"] is True
     content.search_nearby.assert_not_awaited()
-    assert session.query(Location).count() == 4
+    assert session.query(Location).count() == 6
 
 
 def test_far_away_does_not_discover_or_synthesize(environment):

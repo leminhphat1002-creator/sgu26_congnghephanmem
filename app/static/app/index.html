@@ -11,10 +11,10 @@
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
     <link rel="stylesheet" href="/static/app/style.css?v=20261026-catalog1">
     <script src="/static/vendor/leaflet/leaflet.js" defer></script>
-    <script src="/static/app/i18n.js?v=20261026-catalog1" defer></script>
+    <script src="/static/app/i18n.js?v=20261112-presence2" defer></script>
     <script src="/static/app/map.js?v=20261026-catalog1" defer></script>
-    <script src="/static/app/script.js?v=20261026-catalog1" defer></script>
-    <script src="/static/app/presence.js?v=20261026-presence1" defer></script>
+    <script src="/static/app/script.js?v=20261111-play1" defer></script>
+    <script src="/static/app/presence.js?v=20261112-presence2" defer></script>
 </head>
 
 <body>
@@ -130,6 +130,15 @@
                     </p>
                 </div>
 
+                <div class="auto-gps-section">
+                    <label for="shareVisitorLocation">
+                        <input id="shareVisitorLocation" type="checkbox" autocomplete="off" aria-describedby="shareVisitorLocationHelp">
+                        <span data-i18n="Chia sẻ vị trí gần đúng với quản trị viên">Chia sẻ vị trí gần đúng với quản trị viên</span>
+                    </label>
+                    <p id="shareVisitorLocationHelp" class="description" data-i18n="Không bắt buộc. Vị trí chỉ hiển thị tạm thời cho quản trị viên trong lúc bạn dùng tab này.">Không bắt buộc. Vị trí chỉ hiển thị tạm thời cho quản trị viên trong lúc bạn dùng tab này.</p>
+                    <p id="shareVisitorLocationStatus" class="gps-status" role="status" hidden></p>
+                </div>
+
                 <p id="statusMessage"></p>
             </div>
         </details>
@@ -200,17 +209,18 @@
             </div>
             <p id="locationReference" class="description"></p>
             <a id="locationSource" class="place-source" target="_blank" rel="noopener noreferrer" data-i18n="Nguồn tham khảo ↗" hidden>Nguồn tham khảo ↗</a>
-            <h3 data-i18n="Nội dung thuyết minh">Nội dung thuyết minh</h3>
+            <h3 id="narrationTitle"></h3>
             <p id="narrationText"></p>
             <button id="retryNarrationButton" class="secondary-button retry-narration" type="button" hidden data-i18n="Thử tải lại thuyết minh">Thử tải lại thuyết minh</button>
             <div id="audioSection" hidden>
                 <h3 data-i18n="Nghe thuyết minh">Nghe thuyết minh</h3>
                 <p id="audioStatus" class="description" role="status" aria-live="polite"></p>
+                <button id="playAudioButton" class="primary-button" type="button" hidden data-i18n="Phát thuyết minh">Phát thuyết minh</button>
                 <audio id="audioPlayer" controls preload="none" hidden></audio>
                 <div class="speech-controls">
                     <button id="deviceSpeechButton" class="secondary-button" type="button" hidden data-i18n="Nghe bằng giọng thiết bị">Nghe bằng giọng thiết bị</button>
                     <button id="stopSpeechButton" class="secondary-button" type="button" hidden data-i18n="Dừng đọc">Dừng đọc</button>
-                    <button id="retryAudioButton" class="secondary-button" type="button" hidden data-i18n="Thử phát lại">Thử phát lại</button>
+                    <button id="retryAudioButton" class="secondary-button" type="button" hidden data-i18n="Tải lại bài để phát">Tải lại bài để phát</button>
                 </div>
                 <p id="cacheInfo" class="description"></p>
                 <p id="fallbackNotice" class="fallback-notice" hidden></p>

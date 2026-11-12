@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.auth import require_admin
@@ -105,6 +105,53 @@ def test_text_is_available_without_waiting_for_or_calling_tts(environment):
     audio.synthesize.assert_not_awaited()
     assert client.get("/narration/locations/99999/text").status_code == 404
     assert client.get(f"/narration/locations/{location_id}/text?language=fr").status_code == 422
+
+
+def test_text_uses_title_from_selected_or_fallback_article(environment):
+    client, session, audio = environment
+    location_id = client.get("/narration/catalog").json()[0]["location"]["id"]
+    articles = {
+        row.language: row.title
+        for row in session.scalars(
+            select(PoiNarration).where(PoiNarration.location_id == location_id)
+        )
+    }
+    url = f"/narration/locations/{location_id}/text?language=ja"
+
+    for actual_language in ("ja", "en", "vi"):
+        response = client.get(url)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["narration_title"] == articles[actual_language]
+        assert data["content_language"] == actual_language
+        assert data["fallback_used"] is (actual_language != "ja")
+        session.execute(
+            delete(PoiNarration).where(
+                PoiNarration.location_id == location_id,
+                PoiNarration.language == actual_language,
+            )
+        )
+        session.commit()
+
+    assert client.get(url).status_code == 404
+    audio.synthesize.assert_not_awaited()
+
+
+def test_unpublished_location_is_unavailable_from_current_visitor_api(environment):
+    client, session, audio = environment
+    location_id = client.get("/narration/catalog").json()[0]["location"]["id"]
+    location = session.get(Location, location_id)
+    text_url = f"/narration/locations/{location_id}/text"
+    speech_url = client.get(text_url).json()["stream_url"]
+    location.is_ready = False
+    session.commit()
+
+    assert all(
+        row["location"]["id"] != location_id for row in client.get("/narration/catalog").json()
+    )
+    assert client.get(text_url).status_code == 404
+    assert client.get(speech_url).status_code == 404
+    audio.synthesize.assert_not_awaited()
 
 
 def test_local_stream_cache_range_and_stale_text_version(environment, tmp_path, monkeypatch):

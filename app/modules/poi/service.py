@@ -15,6 +15,7 @@ from app.modules.poi.models import Location
 EARTH_RADIUS_METERS = 6_371_000
 DEFAULT_RADIUS_METERS = 80.0
 DEFAULT_SEARCH_RADIUS_METERS = 500.0
+DISTANCE_TOLERANCE_METERS = 1e-6
 
 
 def haversine(
@@ -61,6 +62,8 @@ def find_nearby(
     latitude: float,
     longitude: float,
     search_radius_meters: float = DEFAULT_SEARCH_RADIUS_METERS,
+    *,
+    narratable_only: bool = False,
 ) -> list[tuple[Location, float]]:
     """Find GPS-enabled POIs within the search radius, nearest first."""
     # Validate GPS even when the database contains no locations.
@@ -69,11 +72,13 @@ def find_nearby(
     if search_radius_meters <= 0:
         raise ValueError("Search radius must be positive")
 
-    latitude_delta = search_radius_meters / 111_000
+    # Giữ điểm đúng ranh giới khi tọa độ và khoảng cách được tính bằng số thực.
+    radius_limit = search_radius_meters + DISTANCE_TOLERANCE_METERS
+    latitude_delta = radius_limit / 111_000
     cosine_latitude = max(abs(cos(radians(latitude))), 1e-6)
     longitude_delta = min(
         180.0,
-        search_radius_meters / (111_000 * cosine_latitude),
+        radius_limit / (111_000 * cosine_latitude),
     )
 
     min_latitude = max(-90.0, latitude - latitude_delta)
@@ -87,6 +92,7 @@ def find_nearby(
         max_latitude,
         min_longitude,
         max_longitude,
+        narratable_only=narratable_only,
     )
 
     nearby: list[tuple[Location, float]] = []
@@ -101,7 +107,7 @@ def find_nearby(
             location.latitude,
             location.longitude,
         )
-        if distance <= search_radius_meters:
+        if distance <= radius_limit:
             nearby.append((location, distance))
 
     return sorted(nearby, key=lambda item: item[1])

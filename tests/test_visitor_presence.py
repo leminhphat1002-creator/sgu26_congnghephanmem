@@ -45,6 +45,52 @@ def test_simultaneous_tabs_share_one_visitor():
     assert presence.snapshot()["active_visitors"] == 1
 
 
+def test_active_sessions_sort_by_recency_and_location_expires_independently():
+    now = [0.0]
+    presence = VisitorPresence(clock=lambda: now[0])
+    first = presence.heartbeat(None, location=(20.975678, 105.911678), update_location=True)
+    [original] = presence.snapshot(include_sessions=True)["sessions"]
+    assert original["location"] == {"latitude": 20.976, "longitude": 105.912}
+    now[0] = 30
+    assert presence.heartbeat(first) == first
+    now[0] = 60
+    presence.heartbeat(None)
+    latest, earlier = presence.snapshot(include_sessions=True)["sessions"]
+    assert latest["last_seen_seconds_ago"] == 0
+    assert latest["location"] is None
+    assert earlier["last_seen_seconds_ago"] == 30
+    assert earlier["id"] == original["id"]
+    assert earlier["location"] == original["location"]
+
+    now[0] = 120
+    _, earlier = presence.snapshot(include_sessions=True)["sessions"]
+    assert earlier["location"] is None
+    now[0] = 150
+    [latest] = presence.snapshot(include_sessions=True)["sessions"]
+    assert latest["id"] != original["id"]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"location":{"latitude":91,"longitude":0}}',
+        '{"location":{"latitude":0,"longitude":181}}',
+        '{"location":{"latitude":NaN,"longitude":0}}',
+        '{"location":{"latitude":0,"longitude":Infinity}}',
+        '{"location":{"latitude":true,"longitude":0}}',
+        '{"location":{"latitude":0}}',
+    ],
+)
+def test_presence_rejects_invalid_location(payload):
+    application = create_app()
+    with TestClient(application) as browser:
+        response = browser.post(
+            "/api/presence/heartbeat", content=payload, headers={"Content-Type": "application/json"}
+        )
+        assert response.status_code == 422
+    assert application.state.visitor_presence.snapshot()["active_visitors"] == 0
+
+
 def test_presence_secure_cookie_capacity_and_application_isolation():
     application = create_app()
     application.state.visitor_presence = VisitorPresence(capacity=1)

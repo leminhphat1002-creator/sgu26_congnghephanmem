@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,8 +15,9 @@ from app.main import create_app
 from app.modules.admin.api import _attempts
 from app.modules.admin.models import ActivityEvent, AdminSession, AdminUser
 from app.modules.admin.passwords import hash_password, verify_password
-from app.modules.admin.repository import utcnow
+from app.modules.admin.repository import PLAY_ACTION, utcnow
 from app.modules.audio.api import get_audio_service
+from app.modules.presence.service import COOKIE_NAME as VISITOR_COOKIE_NAME
 from scripts.seed_bat_trang import seed
 
 PASSWORD = "test-only-secure-password"
@@ -180,13 +182,26 @@ def test_dashboard_counts_real_usage(environment):
     assert first["locations"] == 5
     assert first["narrations"] == 15
     assert first["languages"] == {"vi": 5, "en": 5, "ja": 5}
-    client.post("/narration/locations/1?language=ja")
+    assert client.get("/narration/locations/1/text?language=ja").status_code == 200
+    assert client.post("/narration/locations/1?language=ja").status_code == 200
+    assert client.get("/api/admin/dashboard").json()["requests_today"] == first["requests_today"]
+
+    play = "/narration/locations/1/play"
+    initial = {"play_id": str(uuid4())}
+    assert client.post(play, json=initial).status_code == 204
+    assert client.post(play, json=initial).status_code == 204
+    assert client.post(play, json={"play_id": str(uuid4())}).status_code == 204
+    assert client.post(play, json={"play_id": "bad"}).status_code == 422
+    assert (
+        client.post("/narration/locations/99999/play", json={"play_id": str(uuid4())}).status_code
+        == 404
+    )
     result = client.get("/api/admin/dashboard")
     assert result.headers["cache-control"] == "no-store"
-    assert result.json()["requests_today"] == first["requests_today"] + 1
-    assert sum(row["count"] for row in result.json()["daily"]) == 1
-    event = session.scalar(select(ActivityEvent).where(ActivityEvent.action == "narration"))
-    assert event.actor == "visitor" and event.target == "1" and event.status == "success"
+    assert result.json()["requests_today"] == first["requests_today"] + 2
+    assert sum(row["count"] for row in result.json()["daily"]) == 2
+    event = session.scalar(select(ActivityEvent).where(ActivityEvent.play_id == initial["play_id"]))
+    assert event.actor == "visitor" and event.target == "1" and event.action == PLAY_ACTION
 
 
 def test_presence_counts_browsers_separately_from_usage_and_requires_admin(environment):
@@ -209,6 +224,31 @@ def test_presence_counts_browsers_separately_from_usage_and_requires_admin(envir
     assert result["active_visitors"] == 2
     assert result["active_window_seconds"] == 120
     assert result["requests_today"] == before
+    assert "sessions" not in result
+
+
+def test_presence_details_show_shared_location_only_to_admin(environment):
+    client, _ = environment
+    shared = {"location": {"latitude": 20.975678, "longitude": 105.911678}}
+    assert client.post("/api/presence/heartbeat", json=shared).status_code == 204
+    assert client.get("/api/admin/presence").status_code == 401
+    login(client)
+    response = client.get("/api/admin/presence")
+    assert response.headers["cache-control"] == "no-store"
+    [session] = response.json()["sessions"]
+    assert session["id"] != client.cookies.get(VISITOR_COOKIE_NAME)
+    assert session["location"] == {"latitude": 20.976, "longitude": 105.912}
+    assert "location" not in client.get("/api/admin/dashboard").json()
+
+    assert client.post("/api/presence/heartbeat").status_code == 204
+    [updated] = client.get("/api/admin/presence").json()["sessions"]
+    assert updated["id"] == session["id"]
+    assert updated["location"] == session["location"]
+
+    assert client.post("/api/presence/heartbeat", json={"location": None}).status_code == 204
+    [updated] = client.get("/api/admin/presence").json()["sessions"]
+    assert updated["id"] == session["id"]
+    assert updated["location"] is None
 
 
 def test_presence_heartbeat_is_public_but_rejects_foreign_origin(environment):

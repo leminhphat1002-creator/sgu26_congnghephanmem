@@ -8,8 +8,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import UUID4, BaseModel
 from sqlalchemy.orm import Session
 
+from app.core.auth import check_origin
 from app.core.db import get_db
 from app.modules.admin.repository import AdminRepository
 from app.modules.audio.api import get_audio_service
@@ -20,10 +22,16 @@ from app.modules.content.service import ContentService
 from app.modules.narration.schemas import (
     NarrationDetectRequest,
     NarrationDetectResponse,
+    NarrationTextResponse,
 )
 from app.modules.narration.service import NarrationService
+from app.modules.poi.repository import get_narratable_location
 
 router = APIRouter(tags=["narration"])
+
+
+class PlayRequest(BaseModel):
+    play_id: UUID4
 
 
 async def get_offline_speech(
@@ -111,7 +119,7 @@ async def narrate_selected_location(
         ) from exc
 
 
-@router.get("/narration/locations/{location_id}/text", response_model=NarrationDetectResponse)
+@router.get("/narration/locations/{location_id}/text", response_model=NarrationTextResponse)
 async def selected_location_text(
     location_id: int,
     service: Annotated[NarrationService, Depends(get_narration_service)],
@@ -119,21 +127,33 @@ async def selected_location_text(
 ):
     """Trả bài viết ngay, không phụ thuộc mạng hoặc dịch vụ tạo giọng đọc."""
     try:
-        result = await service.narrate_location(
-            location_id=location_id, language=language, include_audio=False
-        )
+        result = await service.read_narration(location_id, language)
         if result.get("text"):
             version = hashlib.sha256(result["text"].encode()).hexdigest()
             result["stream_url"] = (
                 f"/narration/locations/{location_id}/speech?language={language}&version={version}"
             )
-            AdminRepository(service.session).record(
-                "visitor", "narration", str(location_id), "local"
-            )
         return result
     except ValueError as exc:
-        status = 404 if str(exc) == "Không tìm thấy địa điểm" else 422
-        raise HTTPException(status_code=status, detail=str(exc)) from exc
+        if str(exc) == "Không tìm thấy địa điểm":
+            raise HTTPException(404, "Bài thuyết minh không khả dụng.") from exc
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.post(
+    "/narration/locations/{location_id}/play",
+    status_code=204,
+    dependencies=[Depends(check_origin)],
+)
+def record_narration_play(
+    location_id: int,
+    data: PlayRequest,
+    session: Annotated[Session, Depends(get_db)],
+):
+    """Ghi một yêu cầu phát, kể cả khi trình duyệt gửi lại cùng yêu cầu."""
+    if get_narratable_location(session, location_id) is None:
+        raise HTTPException(404, "Bài thuyết minh không khả dụng.")
+    AdminRepository(session).record_play(location_id, str(data.play_id))
 
 
 @router.get("/narration/locations/{location_id}/speech")
@@ -146,10 +166,11 @@ async def stream_selected_speech(
 ):
     """Phát giọng cục bộ khi nhấn Play, không phải chờ API tạo MP3 qua mạng."""
     try:
-        result = await service.narrate_location(location_id, language, include_audio=False)
+        result = await service.read_narration(location_id, language)
     except ValueError as exc:
-        status = 404 if str(exc) == "Không tìm thấy địa điểm" else 422
-        raise HTTPException(status_code=status, detail=str(exc)) from exc
+        if str(exc) == "Không tìm thấy địa điểm":
+            raise HTTPException(404, "Bài thuyết minh không khả dụng.") from exc
+        raise HTTPException(422, str(exc)) from exc
     text = result.get("text")
     if not text:
         raise HTTPException(404, "Không có nội dung thuyết minh")

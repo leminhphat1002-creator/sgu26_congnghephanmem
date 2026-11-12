@@ -109,7 +109,7 @@ def dashboard(request: Request, identity: Identity, db: Database):
 
 @router.get("/presence")
 def presence(request: Request, identity: Identity):
-    return request.app.state.visitor_presence.snapshot()
+    return request.app.state.visitor_presence.snapshot(include_sessions=True)
 
 
 @router.get("/locations")

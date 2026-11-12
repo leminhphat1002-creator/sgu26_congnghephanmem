@@ -95,3 +95,25 @@ def test_curated_migration_preserves_old_data(db_url):
         assert conn.scalar(text("SELECT count(*) FROM locations")) == 1
     command.upgrade(config, "head")
     engine.dispose()
+
+
+def test_play_migration_preserves_old_events(db_url):
+    config = _alembic_config()
+    command.upgrade(config, "0005_app_settings")
+    engine = create_db_engine(db_url)
+    insert_event = text(
+        "INSERT INTO activity_events (created_at, actor, action, target, status) "
+        "VALUES (CURRENT_TIMESTAMP, 'visitor', 'narration', '1', 'ok')"
+    )
+    with engine.begin() as conn:
+        conn.execute(insert_event)
+    command.upgrade(config, "head")
+    with engine.begin() as conn:
+        conn.execute(insert_event)
+        conn.execute(text("UPDATE activity_events SET play_id = 'attempt' WHERE id = 1"))
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(text("UPDATE activity_events SET play_id = 'attempt' WHERE id = 2"))
+    command.downgrade(config, "0005_app_settings")
+    with engine.connect() as conn:
+        assert conn.scalar(text("SELECT count(*) FROM activity_events")) == 2
+    engine.dispose()

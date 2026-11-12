@@ -2,6 +2,8 @@
 
 Dashboard có ô **KHÁCH ĐANG HOẠT ĐỘNG**, ước lượng số trình duyệt khách có tín hiệu
 trong 120 giây gần nhất. Chỉ số này độc lập với số yêu cầu lấy thuyết minh.
+Mục **Phiên khách đang hoạt động** hiển thị mã phiên ẩn danh, thời gian từ tín hiệu
+gần nhất và liên kết bản đồ nếu khách chia sẻ vị trí.
 
 ## Luồng hoạt động
 
@@ -24,8 +26,14 @@ gian hết hạn tránh trừ nhầm. Tab nền không gửi tín hiệu; trở 
 
 ## Dữ liệu và giới hạn
 
-- Lưu tạm mã ngẫu nhiên và thời điểm nhận tín hiệu trong RAM; không lưu vào SQLite,
-  không cần migration, không ghi IP, GPS, tên, quốc gia hoặc lịch sử duyệt trang.
+- Lưu tạm mã ngẫu nhiên, thời điểm nhận tín hiệu và tọa độ gần đúng (nếu được chia sẻ)
+  trong RAM. Tọa độ được làm tròn đến 3 chữ số thập phân và hết hạn sau 120 giây kể
+  từ lần gửi vị trí gần nhất. Không lưu vào SQLite, không cần migration.
+- Khách phải bật **Chia sẻ vị trí gần đúng với quản trị viên** và cấp quyền vị trí
+  cho trình duyệt. Tùy chọn mặc định tắt mỗi lần mở trang. Bỏ chọn sẽ gửi tín hiệu
+  xóa vị trí. Nếu nhiều tab cùng chia sẻ, các tab còn bật có thể tiếp tục gửi vị trí.
+- Tính năng không lưu IP, tên, quốc gia hoặc lịch sử duyệt trang. Mã phiên hiển
+  thị trên dashboard khác giá trị cookie.
 - Cookie dùng cho presence không cấp quyền quản lý. Cookie bị chặn, mạng yếu,
   chế độ tiết kiệm pin hoặc việc trình duyệt trì hoãn timer có thể làm số không chính xác.
 - Không phải số người duy nhất: hai thiết bị/trình duyệt hoặc cửa sổ riêng tư có
@@ -47,6 +55,9 @@ gian hết hạn tránh trừ nhầm. Tab nền không gửi tín hiệu; trở 
 4. Mở trang khách trên điện thoại hoặc trình duyệt khác: tăng thêm một lượt.
 5. Đóng hoặc đưa toàn bộ tab khách xuống nền; sau hơn 2 phút và nhịp cập nhật tiếp,
    số giảm. Tab đang hiển thị tiếp tục giữ lượt của trình duyệt đó.
+6. Trên điện thoại mở trang khách qua HTTPS. Bật chia sẻ và cấp quyền vị trí.
+   Dashboard hiển thị liên kết bản đồ cho phiên đó. Bỏ chọn hoặc thử từ chối quyền
+   để kiểm tra phiên vẫn hiện với trạng thái **Chưa chia sẻ vị trí**.
 
 Backend: `tests/test_visitor_presence.py` và các ca presence trong `tests/test_admin.py`.
 Frontend: `tests/frontend/presence.test.cjs` kiểm tra nhịp gửi, tab nền, lỗi mạng và

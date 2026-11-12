@@ -28,3 +28,7 @@ class NarrationDetectResponse(BaseModel):
     stream_url: str | None = None
     cache_hit: bool | None = None
     message: str | None = None
+
+
+class NarrationTextResponse(NarrationDetectResponse):
+    narration_title: str | None = None

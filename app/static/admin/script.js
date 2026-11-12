@@ -6,6 +6,7 @@ let locations = [];
 let editingId = null;
 let narrationRows = [];
 let contentVersion = 0;
+let dashboardVersion = 0;
 let presenceTimer = null;
 let presencePending = false;
 const languageNames = { vi: "Tiếng Việt", en: "English", ja: "日本語" };
@@ -19,60 +20,118 @@ function notify(message, error = false) {
     $("adminMessage").hidden = false;
 }
 
-function showLogin() {
+function showLogin(message = "") {
     clearInterval(presenceTimer);
     presenceTimer = null;
     csrfToken = "";
     $("adminView").hidden = true;
     $("loginView").hidden = false;
     $("password").value = "";
+    $("loginMessage").textContent = message;
+    $("restoreSessionButton").hidden = true;
+    renderPresenceSessions([], "Đang tải phiên khách…");
 }
 
 async function api(path, options = {}) {
+    const session = csrfToken;
     const headers = { ...options.headers };
     if (options.body) headers["Content-Type"] = "application/json";
-    if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+    if (session) headers["X-CSRF-Token"] = session;
     const response = await fetch(path, { ...options, headers, credentials: "same-origin" });
     if (response.status === 204) return null;
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-        if (response.status === 401 && path !== "/api/admin/login") showLogin();
+        if (response.status === 401 && session && session === csrfToken) {
+            showLogin("Phiên đăng nhập đã hết hiệu lực. Vui lòng đăng nhập lại.");
+        }
         let message = data.detail?.message || data.detail || "Yêu cầu chưa thành công.";
         if (Array.isArray(message)) message = message.map((item) => item.msg).join("; ");
-        throw new Error(message);
+        throw Object.assign(new Error(message), { status: response.status });
     }
     return data;
 }
 
-async function enterAdmin(identity) {
+function enterAdmin(identity) {
     csrfToken = identity.csrf_token;
     $("accountName").textContent = identity.username;
     $("password").value = "";
     $("loginView").hidden = true;
     $("adminView").hidden = false;
-    await refresh();
-    await loadQr();
+    $("adminMessage").hidden = true;
+    $("dashboardContent").hidden = true;
+    $("dashboardError").hidden = true;
     startPresencePolling();
+    void refresh().catch(() => {
+        if (!$("adminView").hidden) notify("Không tải được danh sách địa điểm. Chọn Làm mới ở mục Tổng quan để thử lại.", true);
+    });
+    void loadQr();
+}
+
+async function restoreSession() {
+    $("loginMessage").textContent = "";
+    $("restoreSessionButton").hidden = true;
+    $("loginButton").disabled = true;
+    try {
+        enterAdmin(await api("/api/admin/me"));
+    } catch (error) {
+        if (error.status !== 401) {
+            $("loginMessage").textContent = "Không kiểm tra được phiên đăng nhập. Vui lòng thử lại.";
+            $("restoreSessionButton").hidden = false;
+        }
+    } finally {
+        $("loginButton").disabled = false;
+    }
 }
 
 function updatePresence(data) {
     const count = $("activeVisitorsCount");
-    if (!count) return;
-    count.textContent = String(data.active_visitors);
-    $("activeVisitorsNote").textContent = "Trình duyệt khách · 2 phút gần nhất";
+    if (count) {
+        count.textContent = String(data.active_visitors);
+        $("activeVisitorsNote").textContent = "Trình duyệt khách · 2 phút gần nhất";
+    }
+    renderPresenceSessions(data.sessions ?? [], data.active_visitors
+        ? "Chưa tải được chi tiết phiên khách."
+        : "Chưa có phiên khách đang hoạt động.");
+}
+
+function renderPresenceSessions(sessions, message) {
+    const body = $("presenceBody");
+    body.replaceChildren();
+    for (const { id, last_seen_seconds_ago, location } of sessions) {
+        const row = element("tr");
+        const position = element("td", location ? null : "Chưa chia sẻ vị trí");
+        if (location) {
+            const { latitude, longitude } = location;
+            const map = element("a", `Xem bản đồ (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
+            map.href = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`;
+            map.target = "_blank";
+            map.rel = "noopener noreferrer";
+            position.append(map);
+        }
+        row.append(element("td", id), element("td", `${last_seen_seconds_ago} giây trước`), position);
+        body.append(row);
+    }
+    $("presenceTable").hidden = !sessions.length;
+    $("presenceStatus").hidden = Boolean(sessions.length);
+    $("presenceStatus").textContent = sessions.length ? "" : message;
 }
 
 async function refreshPresence() {
     if (presencePending || $("adminView").hidden || document.visibilityState !== "visible") return;
     presencePending = true;
+    const session = csrfToken;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-        updatePresence(await api("/api/admin/presence", { signal: controller.signal }));
+        const data = await api("/api/admin/presence", { signal: controller.signal });
+        if (session === csrfToken) updatePresence(data);
     } catch {
-        if ($("activeVisitorsCount")) {
-            $("activeVisitorsCount").textContent = "—";
-            $("activeVisitorsNote").textContent = "Chưa cập nhật được · sẽ tự thử lại";
+        if (session === csrfToken) {
+            renderPresenceSessions([], "Chưa cập nhật được phiên khách. Hệ thống sẽ tự thử lại.");
+            if ($("activeVisitorsCount")) {
+                $("activeVisitorsCount").textContent = "—";
+                $("activeVisitorsNote").textContent = "Chưa cập nhật được · sẽ tự thử lại";
+            }
         }
     } finally {
         clearTimeout(timeout);
@@ -100,7 +159,7 @@ $("loginForm").addEventListener("submit", async (event) => {
         const identity = await api("/api/admin/login", { method: "POST", body: JSON.stringify({
             username: $("username").value.trim(), password: $("password").value
         }) });
-        await enterAdmin(identity);
+        enterAdmin(identity);
     } catch (error) {
         if ($("adminView").hidden) $("loginMessage").textContent = error.message;
         else notify(error.message, true);
@@ -112,8 +171,7 @@ $("loginForm").addEventListener("submit", async (event) => {
 $("logoutButton").addEventListener("click", async () => {
     try {
         await api("/api/admin/logout", { method: "POST" });
-        showLogin();
-        $("loginMessage").textContent = "Đã đăng xuất.";
+        showLogin("Đã đăng xuất.");
     } catch (error) { notify(error.message, true); }
 });
 
@@ -144,7 +202,7 @@ function drawDashboard(data) {
         ["KHÁCH ĐANG HOẠT ĐỘNG", data.active_visitors, "Trình duyệt khách · 2 phút gần nhất"],
         ["TỔNG ĐỊA ĐIỂM", data.locations, `${data.published} địa điểm có nội dung hiển thị`],
         ["BẢN THUYẾT MINH", data.narrations, "Nội dung biên soạn trong SQLite"],
-        ["YÊU CẦU HÔM NAY", data.requests_today, "Yêu cầu thuyết minh · GMT+7"],
+        ["YÊU CẦU PHÁT HÔM NAY", data.requests_today, "Yêu cầu phát thuyết minh · GMT+7"],
         ["ÂM THANH ĐÃ LƯU", data.audio_files, `${(data.audio_bytes / 1048576).toFixed(1)} MB trong cache`]
     ];
     for (const [label, count, note] of stats) {
@@ -163,7 +221,7 @@ function drawDashboard(data) {
         const column = element("div", null, "chart-column");
         const bar = element("div", null, "chart-bar");
         bar.style.height = `${Math.max(2, day.count / max * 115)}px`;
-        bar.setAttribute("aria-label", `${day.date}: ${day.count} yêu cầu`);
+        bar.setAttribute("aria-label", `${day.date}: ${day.count} yêu cầu phát`);
         column.append(element("span", String(day.count)), bar, element("span", day.date.slice(5).split("-").reverse().join("/")));
         $("usageChart").append(column);
     }
@@ -215,10 +273,35 @@ function drawLocations() {
     }
 }
 
-async function refresh() {
-    const [dashboard, list] = await Promise.all([api("/api/admin/dashboard"), api("/api/admin/locations")]);
+async function refreshDashboard() {
+    const session = csrfToken;
+    const version = ++dashboardVersion;
+    $("refreshButton").disabled = true;
+    try {
+        const dashboard = await api("/api/admin/dashboard");
+        if (version !== dashboardVersion || session !== csrfToken) return false;
+        drawDashboard(dashboard);
+        $("dashboardContent").hidden = false;
+        $("dashboardError").hidden = true;
+        return true;
+    } catch {
+        if (version !== dashboardVersion || session !== csrfToken) return false;
+        $("dashboardError").textContent = $("dashboardContent").hidden
+            ? "Không tải được thống kê. Chọn Làm mới để thử lại."
+            : "Không cập nhật được thống kê. Đang hiển thị số liệu lần tải trước. Chọn Làm mới để thử lại.";
+        $("dashboardError").hidden = false;
+        return false;
+    } finally {
+        if (version === dashboardVersion) $("refreshButton").disabled = false;
+    }
+}
+
+async function refreshLocations() {
+    const session = csrfToken;
+    const list = await api("/api/admin/locations");
+    if (session !== csrfToken) return;
     locations = list;
-    drawDashboard(dashboard); drawLocations();
+    drawLocations();
     const selected = $("contentLocation").value;
     $("contentLocation").replaceChildren();
     for (const location of locations) {
@@ -227,7 +310,20 @@ async function refresh() {
     if (locations.some((item) => String(item.id) === selected)) $("contentLocation").value = selected;
     await loadNarrations();
 }
-$("refreshButton").addEventListener("click", () => refresh().then(() => notify("Đã cập nhật dữ liệu.")).catch((error) => notify(error.message, true)));
+
+async function refresh() {
+    const [dashboardLoaded] = await Promise.all([refreshDashboard(), refreshLocations()]);
+    return dashboardLoaded;
+}
+
+$("refreshButton").addEventListener("click", async () => {
+    $("adminMessage").hidden = true;
+    try {
+        if (await refresh()) notify("Đã cập nhật dữ liệu.");
+    } catch {
+        if (!$("adminView").hidden) notify("Không cập nhật được danh sách địa điểm. Chọn Làm mới để thử lại.", true);
+    }
+});
 $("locationSearch").addEventListener("input", drawLocations);
 
 function editLocation(location = null) {
@@ -330,4 +426,5 @@ async function loadQr() {
     } catch (error) { notify(error.message, true); }
 }
 
-void api("/api/admin/me").then(enterAdmin).catch(() => showLogin());
+$("restoreSessionButton").addEventListener("click", restoreSession);
+void restoreSession();

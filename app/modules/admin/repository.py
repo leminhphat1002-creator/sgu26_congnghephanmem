@@ -3,11 +3,14 @@
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import Date, cast, delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.admin.models import ActivityEvent, AdminSession, AdminUser
 from app.modules.content.models import PoiNarration
 from app.modules.poi.models import Location
+
+PLAY_ACTION = "narration_play"
 
 
 def utcnow() -> datetime:
@@ -52,6 +55,28 @@ class AdminRepository:
             )
         )
         self.session.commit()
+
+    def record_play(self, location_id: int, play_id: str) -> None:
+        self.session.add(
+            ActivityEvent(
+                created_at=utcnow(),
+                actor="visitor",
+                action=PLAY_ACTION,
+                target=str(location_id),
+                play_id=play_id,
+            )
+        )
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            if (
+                self.session.scalar(
+                    select(ActivityEvent.id).where(ActivityEvent.play_id == play_id)
+                )
+                is None
+            ):
+                raise
 
     def locations(self) -> list[dict]:
         rows = self.session.scalars(select(Location).order_by(Location.id))
@@ -128,7 +153,7 @@ class AdminRepository:
             str(day): total
             for day, total in self.session.execute(
                 select(day_expression, func.count())
-                .where(ActivityEvent.action == "narration", ActivityEvent.created_at >= start)
+                .where(ActivityEvent.action == PLAY_ACTION, ActivityEvent.created_at >= start)
                 .group_by(day_expression)
             ).all()
         }
@@ -151,7 +176,7 @@ class AdminRepository:
             "requests_today": count(
                 select(func.count())
                 .select_from(ActivityEvent)
-                .where(ActivityEvent.action == "narration", ActivityEvent.created_at >= today)
+                .where(ActivityEvent.action == PLAY_ACTION, ActivityEvent.created_at >= today)
             ),
             "daily": [
                 {

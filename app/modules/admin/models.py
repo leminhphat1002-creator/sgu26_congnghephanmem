@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -29,6 +29,7 @@ class ActivityEvent(Base):
     """Sự kiện tổng hợp, không chứa GPS, IP, mật khẩu hay nội dung bài."""
 
     __tablename__ = "activity_events"
+    __table_args__ = (Index("uq_activity_events_play_id", "play_id", unique=True),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, index=True)
@@ -36,6 +37,7 @@ class ActivityEvent(Base):
     action: Mapped[str] = mapped_column(String(80))
     target: Mapped[str] = mapped_column(String(255), default="")
     status: Mapped[str] = mapped_column(String(40), default="ok")
+    play_id: Mapped[str | None] = mapped_column(String(36))
 
 
 class AppSetting(Base):
