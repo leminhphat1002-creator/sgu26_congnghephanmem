@@ -336,19 +336,25 @@ deviceSpeechButton.addEventListener("click", () => {
 });
 stopSpeechButton.addEventListener("click", stopDeviceSpeech);
 
-function recordPlay() {
+async function recordPlay() {
     // getRandomValues also works on HTTP LAN, where randomUUID is unavailable.
     const bytes = crypto.getRandomValues(new Uint8Array(16));
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
     const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
     const playId = hex.replace(/^(........)(....)(....)(....)(............)$/, "$1-$2-$3-$4-$5");
-    void fetch(`/narration/locations/${selectedLocationId}/play`, {
+    const url = `/narration/locations/${selectedLocationId}/play`;
+    const options = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ play_id: playId }),
         keepalive: true
-    }).catch(() => { /* An unavailable counter must not interrupt playback. */ });
+    };
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const response = await fetch(url, options).catch(() => null);
+        if (response && response.status < 500) return;
+        if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 750));
+    }
 }
 
 playAudioButton.addEventListener("click", () => {
@@ -361,7 +367,7 @@ playAudioButton.addEventListener("click", () => {
     audioStatus.textContent = t("Đang mở giọng đọc…");
     const version = narrationVersion;
     const playback = audioPlayer.play();
-    if (!retryingPlayback) recordPlay();
+    if (!retryingPlayback) void recordPlay();
     retryingPlayback = false;
     void playback.catch(() => {
         if (version === narrationVersion) showAudioError();
@@ -373,7 +379,7 @@ audioPlayer.addEventListener("play", () => {
     stopDeviceSpeech();
     if (completedPlayback) {
         completedPlayback = false;
-        recordPlay();
+        void recordPlay();
     }
 });
 

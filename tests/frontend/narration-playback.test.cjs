@@ -8,7 +8,7 @@ const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../app/static/app/script.js"), "utf8");
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
-function visitor() {
+function visitor({ playResponses = [] } = {}) {
     const calls = [];
     const elements = new Map();
     const gps = { cancelled: [] };
@@ -63,6 +63,11 @@ function visitor() {
         crypto: webcrypto, URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
         async fetch(url, options = {}) {
             calls.push({ url, method: options.method || "GET", body: options.body });
+            if (url.endsWith("/play")) {
+                const response = playResponses.shift() ?? 204;
+                if (response instanceof Error) throw response;
+                return { status: response };
+            }
             if (url === "/narration/catalog") {
                 return {
                     ok: true,
@@ -146,6 +151,20 @@ test("audio recovery reloads the article and does not count a second request", a
     playButton.emit("click");
     assert.equal(player.attributes.get("src"), page.article.stream_url);
     assert.equal(page.calls.filter(call => call.method === "POST").length, 1);
+});
+
+test("transient play counter errors retry once with the same request while audio plays", async () => {
+    for (const failure of [new Error("offline"), 503]) {
+        const page = visitor({ playResponses: [failure, 204] });
+        await flush();
+        await page.openArticle();
+        page.get("playAudioButton").emit("click");
+        assert.equal(page.get("audioPlayer").paused, false);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const requests = page.calls.filter(call => call.url.endsWith("/play"));
+        assert.equal(requests.length, 2);
+        assert.deepEqual(requests[0], requests[1]);
+    }
 });
 
 test("an unavailable article shows a distinct message and never exposes Play", async () => {
